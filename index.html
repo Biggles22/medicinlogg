@@ -279,14 +279,16 @@
 
       .schedule-list,
       .template-list,
-      .history-list {
+      .history-list,
+      .interval-list {
         display: grid;
         gap: 8px;
       }
 
       .slot,
       .template-item,
-      .history-row {
+      .history-row,
+      .interval-row {
         border: 1px solid var(--line);
         border-radius: 8px;
         background: #fff;
@@ -368,6 +370,55 @@
         gap: 12px;
         align-items: center;
         padding: 13px;
+      }
+
+      .interval-summary {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .interval-stat {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface-2);
+        padding: 10px;
+      }
+
+      .interval-stat span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 760;
+      }
+
+      .interval-stat strong {
+        display: block;
+        margin-top: 3px;
+        font-size: 1.15rem;
+      }
+
+      .interval-row {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 10px;
+        align-items: center;
+        padding: 11px 12px;
+      }
+
+      .interval-row strong {
+        display: block;
+      }
+
+      .interval-row span {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .delta {
+        min-width: 76px;
+        text-align: center;
       }
 
       label {
@@ -508,6 +559,10 @@
           grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
+        .interval-summary {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
         .side-actions {
           margin-top: 0;
           grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -549,12 +604,14 @@
 
         .stats,
         .side-actions,
-        .form-grid {
+        .form-grid,
+        .interval-summary {
           grid-template-columns: 1fr;
         }
 
         .dose-row,
-        .template-item {
+        .template-item,
+        .interval-row {
           grid-template-columns: 1fr;
         }
 
@@ -670,6 +727,16 @@
               <div class="schedule-list" id="scheduleList"></div>
             </div>
           </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h3>Mellanrum under dagen</h3>
+              <span class="pill">Mål 3 tim</span>
+            </div>
+            <div class="panel-body">
+              <div id="intervalSummary"></div>
+            </div>
+          </section>
         </section>
 
         <section class="view" id="templateView">
@@ -737,6 +804,7 @@
         dateTitle: document.querySelector("#dateTitle"),
         selectedDate: document.querySelector("#selectedDate"),
         scheduleList: document.querySelector("#scheduleList"),
+        intervalSummary: document.querySelector("#intervalSummary"),
         templateList: document.querySelector("#templateList"),
         historyList: document.querySelector("#historyList"),
         dayNotice: document.querySelector("#dayNotice"),
@@ -856,6 +924,7 @@
         const entries = entriesForDate(els.selectedDate.value);
         els.dayNotice.classList.toggle("hidden", entries.length > 0);
         els.scheduleList.innerHTML = "";
+        renderDoseIntervals(entries);
 
         if (!entries.length) {
           els.scheduleList.innerHTML = `<div class="empty">Ingen standarddag skapad för vald dag ännu.</div>`;
@@ -919,6 +988,73 @@
 
           els.scheduleList.append(slot);
         });
+      }
+
+      function renderDoseIntervals(entries) {
+        const targetMinutes = 180;
+        const takenSlots = groupByTime(entries)
+          .filter(([, items]) => items.some((item) => item.status === "taken"))
+          .map(([time, items]) => ({
+            time,
+            minutes: timeToMinutes(time),
+            medicines: items.filter((item) => item.status === "taken").map((item) => item.medicine),
+          }))
+          .filter((slot) => Number.isFinite(slot.minutes))
+          .sort((a, b) => a.minutes - b.minutes);
+
+        if (takenSlots.length < 2) {
+          els.intervalSummary.innerHTML = `<div class="empty">Minst två tagna tillfällen behövs för att visa mellanrum.</div>`;
+          return;
+        }
+
+        const intervals = takenSlots.slice(1).map((slot, index) => {
+          const previous = takenSlots[index];
+          const minutes = slot.minutes - previous.minutes;
+          const delta = minutes - targetMinutes;
+          return { previous, current: slot, minutes, delta };
+        });
+        const average = Math.round(intervals.reduce((sum, interval) => sum + interval.minutes, 0) / intervals.length);
+        const shortest = Math.min(...intervals.map((interval) => interval.minutes));
+        const longest = Math.max(...intervals.map((interval) => interval.minutes));
+        const largestDelta = intervals.reduce((largest, interval) =>
+          Math.abs(interval.delta) > Math.abs(largest.delta) ? interval : largest
+        );
+
+        els.intervalSummary.innerHTML = `
+          <div class="interval-summary">
+            ${intervalStat("Tillfällen", takenSlots.length)}
+            ${intervalStat("Snitt", formatDuration(average))}
+            ${intervalStat("Kortast", formatDuration(shortest))}
+            ${intervalStat("Längst", formatDuration(longest))}
+          </div>
+          <div class="notice">Största avvikelse: ${formatDelta(largestDelta.delta)} (${escapeHtml(largestDelta.previous.time)} till ${escapeHtml(largestDelta.current.time)})</div>
+          <div class="interval-list">
+            ${intervals.map((interval) => intervalRow(interval)).join("")}
+          </div>
+        `;
+      }
+
+      function intervalStat(label, value) {
+        return `
+          <div class="interval-stat">
+            <span>${label}</span>
+            <strong>${value}</strong>
+          </div>
+        `;
+      }
+
+      function intervalRow(interval) {
+        const deltaClass = Math.abs(interval.delta) <= 15 ? "done" : "";
+        return `
+          <article class="interval-row">
+            <div>
+              <strong>${escapeHtml(interval.previous.time)} till ${escapeHtml(interval.current.time)}</strong>
+              <span>${escapeHtml(uniqueList(interval.current.medicines).join(", ") || "Medicin")}</span>
+            </div>
+            <span>${formatDuration(interval.minutes)}</span>
+            <span class="pill delta ${deltaClass}">${formatDelta(interval.delta)}</span>
+          </article>
+        `;
       }
 
       function renderTemplate() {
@@ -1636,6 +1772,31 @@
       function currentTime() {
         const now = new Date();
         return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+      }
+
+      function timeToMinutes(time) {
+        const [hours, minutes] = String(time).split(":").map(Number);
+        if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return NaN;
+        return hours * 60 + minutes;
+      }
+
+      function formatDuration(totalMinutes) {
+        const minutes = Math.max(0, Math.round(totalMinutes));
+        const hours = Math.floor(minutes / 60);
+        const rest = minutes % 60;
+        if (!hours) return `${rest} min`;
+        if (!rest) return `${hours} tim`;
+        return `${hours} tim ${rest} min`;
+      }
+
+      function formatDelta(minutes) {
+        if (minutes === 0) return "exakt";
+        const sign = minutes > 0 ? "+" : "-";
+        return `${sign}${formatDuration(Math.abs(minutes))}`;
+      }
+
+      function uniqueList(values) {
+        return [...new Set(values.filter(Boolean))];
       }
 
       function formatDate(dateKey) {
