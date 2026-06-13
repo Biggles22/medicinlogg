@@ -1213,131 +1213,87 @@
       }
 
       function exportData() {
-        const workbook = buildExcelWorkbook();
-        const blob = new Blob([workbook], { type: "application/vnd.ms-excel;charset=utf-8" });
+        const workbook = buildXlsxWorkbook();
+        const blob = new Blob([workbook], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `medicinlogg-${todayKey()}.xls`;
+        link.download = `medicinlogg-${todayKey()}.xlsx`;
         link.click();
         URL.revokeObjectURL(url);
         toast("Excel-fil exporterad");
       }
 
-      function buildExcelWorkbook() {
+      function buildXlsxWorkbook() {
         const generatedAt = new Date();
         const historyEntries = state.entries
           .slice()
           .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
         const dailyRows = buildDailySummaryRows(historyEntries);
+        const overviewRows = [
+          xlsxTextRow(["Medicinlogg"], 2, 26),
+          xlsxTextRow([`Exporterad ${generatedAt.toLocaleString("sv-SE")}`], 3),
+          xlsxBlankRow(),
+          xlsxTextRow(["Datum", "Veckodag", "Vecka", "Planerade", "Tagna", "Hoppade över", "Följsamhet"], 4),
+          ...dailyRows.map((row) =>
+            xlsxRow([
+              xlsxText(row.date),
+              xlsxText(row.weekday),
+              xlsxNumber(row.week),
+              xlsxNumber(row.planned),
+              xlsxNumber(row.taken),
+              xlsxNumber(row.skipped),
+              xlsxText(`${row.percent}%`),
+            ])
+          ),
+        ];
+        const historyRows = [
+          xlsxTextRow(["Historik"], 2, 26),
+          xlsxTextRow([`${historyEntries.length} loggade rader`], 3),
+          xlsxBlankRow(),
+          xlsxTextRow(["Datum", "Veckodag", "Vecka", "Tid", "Medicin", "Dos", "Status", "Anteckning"], 4),
+          ...historyEntries.map((entry) => {
+            const date = new Date(`${entry.date}T12:00:00`);
+            const style = entry.status === "taken" ? 5 : entry.status === "skipped" ? 6 : 1;
+            return xlsxRow([
+              xlsxText(entry.date, style),
+              xlsxText(date.toLocaleDateString("sv-SE", { weekday: "long" }), style),
+              xlsxNumber(getWeekNumber(date), style),
+              xlsxText(entry.time, style),
+              xlsxText(entry.medicine, style),
+              xlsxText(entry.dose, style),
+              xlsxText(statusLabel(entry.status), style),
+              xlsxText(entry.note, style),
+            ]);
+          }),
+        ];
+        const templateRows = [
+          xlsxTextRow(["Standarddag"], 2, 26),
+          xlsxTextRow([`${state.template.length} rader i mallen`], 3),
+          xlsxBlankRow(),
+          xlsxTextRow(["Tid", "Medicin", "Dos", "Anteckning"], 4),
+          ...templateItems().map((item) =>
+            xlsxRow([
+              xlsxText(item.time),
+              xlsxText(item.medicine),
+              xlsxText(item.dose),
+              xlsxText(item.note),
+            ])
+          ),
+        ];
 
-        return `<?xml version="1.0" encoding="UTF-8"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
-  xmlns:o="urn:schemas-microsoft-com:office:office"
-  xmlns:x="urn:schemas-microsoft-com:office:excel"
-  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
-  xmlns:html="http://www.w3.org/TR/REC-html40">
-  <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
-    <Title>Medicinlogg</Title>
-    <Author>Medicinlogg</Author>
-    <Created>${generatedAt.toISOString()}</Created>
-  </DocumentProperties>
-  <Styles>
-    <Style ss:ID="Default" ss:Name="Normal">
-      <Alignment ss:Vertical="Center" ss:WrapText="1"/>
-      <Font ss:FontName="Aptos" ss:Size="11" ss:Color="#111817"/>
-    </Style>
-    <Style ss:ID="Title">
-      <Font ss:FontName="Aptos Display" ss:Size="18" ss:Bold="1" ss:Color="#0B5F59"/>
-    </Style>
-    <Style ss:ID="Meta">
-      <Font ss:FontName="Aptos" ss:Size="10" ss:Color="#61706D"/>
-    </Style>
-    <Style ss:ID="Header">
-      <Interior ss:Color="#0F766E" ss:Pattern="Solid"/>
-      <Font ss:FontName="Aptos" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/>
-      <Alignment ss:Vertical="Center" ss:WrapText="1"/>
-      <Borders>
-        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0B5F59"/>
-      </Borders>
-    </Style>
-    <Style ss:ID="Cell">
-      <Interior ss:Color="#FFFFFF" ss:Pattern="Solid"/>
-      <Borders>
-        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D7E2DD"/>
-      </Borders>
-    </Style>
-    <Style ss:ID="CellMuted">
-      <Interior ss:Color="#F2F6F4" ss:Pattern="Solid"/>
-      <Font ss:FontName="Aptos" ss:Size="11" ss:Color="#61706D"/>
-      <Borders>
-        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D7E2DD"/>
-      </Borders>
-    </Style>
-    <Style ss:ID="Taken">
-      <Interior ss:Color="#DCFCE7" ss:Pattern="Solid"/>
-      <Font ss:FontName="Aptos" ss:Size="11" ss:Color="#14532D"/>
-      <Borders>
-        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BBF7D0"/>
-      </Borders>
-    </Style>
-    <Style ss:ID="Skipped">
-      <Interior ss:Color="#FEE2E2" ss:Pattern="Solid"/>
-      <Font ss:FontName="Aptos" ss:Size="11" ss:Color="#7F1D1D"/>
-      <Borders>
-        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#FECACA"/>
-      </Borders>
-    </Style>
-  </Styles>
-  ${worksheet("Översikt", [130, 130, 90, 90, 90, 90, 110], [
-    titleRow("Medicinlogg"),
-    metaRow(`Exporterad ${generatedAt.toLocaleString("sv-SE")}`),
-    blankRow(),
-    headerRow(["Datum", "Veckodag", "Vecka", "Planerade", "Tagna", "Hoppade över", "Följsamhet"]),
-    ...dailyRows.map((row) => excelRow([
-      cell(row.date),
-      cell(row.weekday),
-      numberCell(row.week),
-      numberCell(row.planned),
-      numberCell(row.taken),
-      numberCell(row.skipped),
-      cell(`${row.percent}%`),
-    ])),
-  ])}
-  ${worksheet("Historik", [115, 90, 70, 80, 170, 110, 110, 260], [
-    titleRow("Historik"),
-    metaRow(`${historyEntries.length} loggade rader`),
-    blankRow(),
-    headerRow(["Datum", "Veckodag", "Vecka", "Tid", "Medicin", "Dos", "Status", "Anteckning"]),
-    ...historyEntries.map((entry) => {
-      const date = new Date(`${entry.date}T12:00:00`);
-      const style = entry.status === "taken" ? "Taken" : entry.status === "skipped" ? "Skipped" : "Cell";
-      return excelRow([
-        cell(entry.date, style),
-        cell(date.toLocaleDateString("sv-SE", { weekday: "long" }), style),
-        numberCell(getWeekNumber(date), style),
-        cell(entry.time, style),
-        cell(entry.medicine, style),
-        cell(entry.dose, style),
-        cell(statusLabel(entry.status), style),
-        cell(entry.note, style),
-      ]);
-    }),
-  ])}
-  ${worksheet("Standarddag", [90, 180, 120, 280], [
-    titleRow("Standarddag"),
-    metaRow(`${state.template.length} rader i mallen`),
-    blankRow(),
-    headerRow(["Tid", "Medicin", "Dos", "Anteckning"]),
-    ...templateItems().map((item) => excelRow([
-      cell(item.time),
-      cell(item.medicine),
-      cell(item.dose),
-      cell(item.note),
-    ])),
-  ])}
-</Workbook>`;
+        return createXlsxZip([
+          ["[Content_Types].xml", xlsxContentTypes()],
+          ["_rels/.rels", xlsxRootRelationships()],
+          ["docProps/core.xml", xlsxCoreProperties(generatedAt)],
+          ["docProps/app.xml", xlsxAppProperties()],
+          ["xl/workbook.xml", xlsxWorkbookXml()],
+          ["xl/_rels/workbook.xml.rels", xlsxWorkbookRelationships()],
+          ["xl/styles.xml", xlsxStylesXml()],
+          ["xl/worksheets/sheet1.xml", xlsxWorksheetXml([18, 18, 12, 12, 12, 15, 14], overviewRows)],
+          ["xl/worksheets/sheet2.xml", xlsxWorksheetXml([16, 14, 10, 11, 24, 16, 16, 38], historyRows)],
+          ["xl/worksheets/sheet3.xml", xlsxWorksheetXml([12, 26, 18, 42], templateRows)],
+        ]);
       }
 
       function buildDailySummaryRows(entries) {
@@ -1360,50 +1316,271 @@
         });
       }
 
-      function worksheet(name, widths, rows) {
-        return `
-  <Worksheet ss:Name="${escapeXml(name).slice(0, 31)}">
-    <Table>
-      ${widths.map((width) => `<Column ss:Width="${width}"/>`).join("\n      ")}
-      ${rows.join("\n      ")}
-    </Table>
-    <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
-      <FreezePanes/>
-      <FrozenNoSplit/>
-      <SplitHorizontal>4</SplitHorizontal>
-      <TopRowBottomPane>4</TopRowBottomPane>
-      <ActivePane>2</ActivePane>
-    </WorksheetOptions>
-  </Worksheet>`;
+      function xlsxWorkbookXml() {
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets>
+    <sheet name="Översikt" sheetId="1" r:id="rId1"/>
+    <sheet name="Historik" sheetId="2" r:id="rId2"/>
+    <sheet name="Standarddag" sheetId="3" r:id="rId3"/>
+  </sheets>
+</workbook>`;
       }
 
-      function titleRow(title) {
-        return `<Row ss:Height="28">${cell(title, "Title", "String", 3)}</Row>`;
+      function xlsxWorksheetXml(widths, rows) {
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetViews>
+    <sheetView workbookViewId="0">
+      <pane ySplit="4" topLeftCell="A5" activePane="bottomLeft" state="frozen"/>
+    </sheetView>
+  </sheetViews>
+  <sheetFormatPr defaultRowHeight="15"/>
+  <cols>
+    ${widths.map((width, index) => `<col min="${index + 1}" max="${index + 1}" width="${width}" customWidth="1"/>`).join("\n    ")}
+  </cols>
+  <sheetData>
+    ${rows.map((row, index) => xlsxRowXml(row, index + 1)).join("\n    ")}
+  </sheetData>
+</worksheet>`;
       }
 
-      function metaRow(text) {
-        return `<Row>${cell(text, "Meta", "String", 3)}</Row>`;
+      function xlsxRowXml(row, rowIndex) {
+        const height = row.height ? ` ht="${row.height}" customHeight="1"` : "";
+        return `<row r="${rowIndex}"${height}>${row.cells.map((cell, index) => xlsxCellXml(cell, rowIndex, index + 1)).join("")}</row>`;
       }
 
-      function headerRow(values) {
-        return excelRow(values.map((value) => cell(value, "Header")));
+      function xlsxCellXml(cell, rowIndex, columnIndex) {
+        if (!cell) return "";
+        const ref = `${xlsxColumnName(columnIndex)}${rowIndex}`;
+        const style = cell.style ? ` s="${cell.style}"` : "";
+        if (cell.type === "number") return `<c r="${ref}"${style}><v>${cell.value}</v></c>`;
+        return `<c r="${ref}"${style} t="inlineStr"><is><t>${escapeXml(cell.value ?? "")}</t></is></c>`;
       }
 
-      function blankRow() {
-        return "<Row/>";
+      function xlsxTextRow(values, style = 1, height = 0) {
+        return { height, cells: values.map((value) => xlsxText(value, style)) };
       }
 
-      function excelRow(cells) {
-        return `<Row>${cells.join("")}</Row>`;
+      function xlsxBlankRow() {
+        return { cells: [] };
       }
 
-      function cell(value, style = "Cell", type = "String", mergeAcross = 0) {
-        const merge = mergeAcross ? ` ss:MergeAcross="${mergeAcross}"` : "";
-        return `<Cell ss:StyleID="${style}"${merge}><Data ss:Type="${type}">${escapeXml(value ?? "")}</Data></Cell>`;
+      function xlsxRow(cells) {
+        return { cells };
       }
 
-      function numberCell(value, style = "Cell") {
-        return cell(Number.isFinite(value) ? value : 0, style, "Number");
+      function xlsxText(value, style = 1) {
+        return { value, style, type: "text" };
+      }
+
+      function xlsxNumber(value, style = 1) {
+        return { value: Number.isFinite(value) ? value : 0, style, type: "number" };
+      }
+
+      function xlsxColumnName(index) {
+        let name = "";
+        while (index > 0) {
+          const remainder = (index - 1) % 26;
+          name = String.fromCharCode(65 + remainder) + name;
+          index = Math.floor((index - 1) / 26);
+        }
+        return name;
+      }
+
+      function xlsxContentTypes() {
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
+  <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+</Types>`;
+      }
+
+      function xlsxRootRelationships() {
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
+</Relationships>`;
+      }
+
+      function xlsxWorkbookRelationships() {
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/>
+  <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`;
+      }
+
+      function xlsxCoreProperties(date) {
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <dc:title>Medicinlogg</dc:title>
+  <dc:creator>Medicinlogg</dc:creator>
+  <cp:lastModifiedBy>Medicinlogg</cp:lastModifiedBy>
+  <dcterms:created xsi:type="dcterms:W3CDTF">${date.toISOString()}</dcterms:created>
+  <dcterms:modified xsi:type="dcterms:W3CDTF">${date.toISOString()}</dcterms:modified>
+</cp:coreProperties>`;
+      }
+
+      function xlsxAppProperties() {
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+  <Application>Medicinlogg</Application>
+</Properties>`;
+      }
+
+      function xlsxStylesXml() {
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <fonts count="5">
+    <font><sz val="11"/><color rgb="FF111817"/><name val="Aptos"/></font>
+    <font><b/><sz val="18"/><color rgb="FF0B5F59"/><name val="Aptos Display"/></font>
+    <font><sz val="10"/><color rgb="FF61706D"/><name val="Aptos"/></font>
+    <font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Aptos"/></font>
+    <font><sz val="11"/><color rgb="FF14532D"/><name val="Aptos"/></font>
+  </fonts>
+  <fills count="6">
+    <fill><patternFill patternType="none"/></fill>
+    <fill><patternFill patternType="gray125"/></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFFFFFFF"/><bgColor indexed="64"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FF0F766E"/><bgColor indexed="64"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFDCFCE7"/><bgColor indexed="64"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFFEE2E2"/><bgColor indexed="64"/></patternFill></fill>
+  </fills>
+  <borders count="2">
+    <border><left/><right/><top/><bottom/><diagonal/></border>
+    <border><left/><right/><top/><bottom style="thin"><color rgb="FFD7E2DD"/></bottom/><diagonal/></border>
+  </borders>
+  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+  <cellXfs count="7">
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+    <xf numFmtId="0" fontId="0" fillId="2" borderId="1" xfId="0" applyFill="1" applyBorder="1"><alignment vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment vertical="center"/></xf>
+    <xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment vertical="center"/></xf>
+    <xf numFmtId="0" fontId="3" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="4" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="5" borderId="1" xfId="0" applyFill="1" applyBorder="1"><alignment vertical="center" wrapText="1"/></xf>
+  </cellXfs>
+  <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+  <dxfs count="0"/>
+  <tableStyles count="0" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleLight16"/>
+</styleSheet>`;
+      }
+
+      function createXlsxZip(files) {
+        const encoder = new TextEncoder();
+        const fileParts = files.map(([name, content]) => ({
+          name,
+          nameBytes: encoder.encode(name),
+          data: encoder.encode(content),
+        }));
+        const chunks = [];
+        const centralDirectory = [];
+        let offset = 0;
+
+        fileParts.forEach((file) => {
+          const crc = crc32(file.data);
+          const localHeader = new Uint8Array(30 + file.nameBytes.length);
+          writeZipHeader(localHeader, 0x04034b50, 20, 0, 0x0800, 0, 0, 0, crc, file.data.length, file.data.length, file.nameBytes.length, 0);
+          localHeader.set(file.nameBytes, 30);
+          chunks.push(localHeader, file.data);
+
+          const centralHeader = new Uint8Array(46 + file.nameBytes.length);
+          writeZipHeader(centralHeader, 0x02014b50, 20, 20, 0x0800, 0, 0, 0, crc, file.data.length, file.data.length, file.nameBytes.length, 0, 0, 0, 0, 0, offset);
+          centralHeader.set(file.nameBytes, 46);
+          centralDirectory.push(centralHeader);
+          offset += localHeader.length + file.data.length;
+        });
+
+        const centralOffset = offset;
+        const centralSize = centralDirectory.reduce((sum, chunk) => sum + chunk.length, 0);
+        const end = new Uint8Array(22);
+        writeZipEnd(end, fileParts.length, centralSize, centralOffset);
+        return concatUint8Arrays([...chunks, ...centralDirectory, end]);
+      }
+
+      function writeZipHeader(buffer, signature, versionMade, versionNeeded, flags, method, time, date, crc, compressedSize, size, nameLength, extraLength, commentLength = 0, diskStart = 0, internalAttrs = 0, externalAttrs = 0, localOffset = 0) {
+        const view = new DataView(buffer.buffer);
+        view.setUint32(0, signature, true);
+        if (signature === 0x04034b50) {
+          view.setUint16(4, versionMade, true);
+          view.setUint16(6, flags, true);
+          view.setUint16(8, method, true);
+          view.setUint16(10, time, true);
+          view.setUint16(12, date, true);
+          view.setUint32(14, crc, true);
+          view.setUint32(18, compressedSize, true);
+          view.setUint32(22, size, true);
+          view.setUint16(26, nameLength, true);
+          view.setUint16(28, extraLength, true);
+          return;
+        }
+        view.setUint16(4, versionMade, true);
+        view.setUint16(6, versionNeeded, true);
+        view.setUint16(8, flags, true);
+        view.setUint16(10, method, true);
+        view.setUint16(12, time, true);
+        view.setUint16(14, date, true);
+        view.setUint32(16, crc, true);
+        view.setUint32(20, compressedSize, true);
+        view.setUint32(24, size, true);
+        view.setUint16(28, nameLength, true);
+        view.setUint16(30, extraLength, true);
+        view.setUint16(32, commentLength, true);
+        view.setUint16(34, diskStart, true);
+        view.setUint16(36, internalAttrs, true);
+        view.setUint32(38, externalAttrs, true);
+        view.setUint32(42, localOffset, true);
+      }
+
+      function writeZipEnd(buffer, fileCount, centralSize, centralOffset) {
+        const view = new DataView(buffer.buffer);
+        view.setUint32(0, 0x06054b50, true);
+        view.setUint16(8, fileCount, true);
+        view.setUint16(10, fileCount, true);
+        view.setUint32(12, centralSize, true);
+        view.setUint32(16, centralOffset, true);
+      }
+
+      function concatUint8Arrays(parts) {
+        const totalLength = parts.reduce((sum, part) => sum + part.length, 0);
+        const result = new Uint8Array(totalLength);
+        let offset = 0;
+        parts.forEach((part) => {
+          result.set(part, offset);
+          offset += part.length;
+        });
+        return result;
+      }
+
+      function crc32(bytes) {
+        let crc = 0xffffffff;
+        const table = crc32.table || (crc32.table = buildCrc32Table());
+        bytes.forEach((byte) => {
+          crc = (crc >>> 8) ^ table[(crc ^ byte) & 0xff];
+        });
+        return (crc ^ 0xffffffff) >>> 0;
+      }
+
+      function buildCrc32Table() {
+        return Array.from({ length: 256 }, (_, index) => {
+          let value = index;
+          for (let bit = 0; bit < 8; bit += 1) {
+            value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
+          }
+          return value >>> 0;
+        });
       }
 
       function escapeXml(value) {
