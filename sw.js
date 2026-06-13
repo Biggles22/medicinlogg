@@ -13,7 +13,7 @@ self.addEventListener("activate", (event) => {
       .then((keys) => Promise.all(keys.filter((key) => key !== cacheName).map((key) => caches.delete(key))))
   );
   self.clients.claim();
-});
+}); 
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
