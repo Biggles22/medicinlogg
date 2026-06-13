@@ -1213,14 +1213,206 @@
       }
 
       function exportData() {
-        const payload = JSON.stringify({ exportedAt: new Date().toISOString(), ...state }, null, 2);
-        const blob = new Blob([payload], { type: "application/json" });
+        const workbook = buildExcelWorkbook();
+        const blob = new Blob([workbook], { type: "application/vnd.ms-excel;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `medicinlogg-${todayKey()}.json`;
+        link.download = `medicinlogg-${todayKey()}.xls`;
         link.click();
         URL.revokeObjectURL(url);
+        toast("Excel-fil exporterad");
+      }
+
+      function buildExcelWorkbook() {
+        const generatedAt = new Date();
+        const historyEntries = state.entries
+          .slice()
+          .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+        const dailyRows = buildDailySummaryRows(historyEntries);
+
+        return `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+  xmlns:o="urn:schemas-microsoft-com:office:office"
+  xmlns:x="urn:schemas-microsoft-com:office:excel"
+  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+  xmlns:html="http://www.w3.org/TR/REC-html40">
+  <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+    <Title>Medicinlogg</Title>
+    <Author>Medicinlogg</Author>
+    <Created>${generatedAt.toISOString()}</Created>
+  </DocumentProperties>
+  <Styles>
+    <Style ss:ID="Default" ss:Name="Normal">
+      <Alignment ss:Vertical="Center" ss:WrapText="1"/>
+      <Font ss:FontName="Aptos" ss:Size="11" ss:Color="#111817"/>
+    </Style>
+    <Style ss:ID="Title">
+      <Font ss:FontName="Aptos Display" ss:Size="18" ss:Bold="1" ss:Color="#0B5F59"/>
+    </Style>
+    <Style ss:ID="Meta">
+      <Font ss:FontName="Aptos" ss:Size="10" ss:Color="#61706D"/>
+    </Style>
+    <Style ss:ID="Header">
+      <Interior ss:Color="#0F766E" ss:Pattern="Solid"/>
+      <Font ss:FontName="Aptos" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/>
+      <Alignment ss:Vertical="Center" ss:WrapText="1"/>
+      <Borders>
+        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0B5F59"/>
+      </Borders>
+    </Style>
+    <Style ss:ID="Cell">
+      <Interior ss:Color="#FFFFFF" ss:Pattern="Solid"/>
+      <Borders>
+        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D7E2DD"/>
+      </Borders>
+    </Style>
+    <Style ss:ID="CellMuted">
+      <Interior ss:Color="#F2F6F4" ss:Pattern="Solid"/>
+      <Font ss:FontName="Aptos" ss:Size="11" ss:Color="#61706D"/>
+      <Borders>
+        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D7E2DD"/>
+      </Borders>
+    </Style>
+    <Style ss:ID="Taken">
+      <Interior ss:Color="#DCFCE7" ss:Pattern="Solid"/>
+      <Font ss:FontName="Aptos" ss:Size="11" ss:Color="#14532D"/>
+      <Borders>
+        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BBF7D0"/>
+      </Borders>
+    </Style>
+    <Style ss:ID="Skipped">
+      <Interior ss:Color="#FEE2E2" ss:Pattern="Solid"/>
+      <Font ss:FontName="Aptos" ss:Size="11" ss:Color="#7F1D1D"/>
+      <Borders>
+        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#FECACA"/>
+      </Borders>
+    </Style>
+  </Styles>
+  ${worksheet("Översikt", [130, 130, 90, 90, 90, 90, 110], [
+    titleRow("Medicinlogg"),
+    metaRow(`Exporterad ${generatedAt.toLocaleString("sv-SE")}`),
+    blankRow(),
+    headerRow(["Datum", "Veckodag", "Vecka", "Planerade", "Tagna", "Hoppade över", "Följsamhet"]),
+    ...dailyRows.map((row) => excelRow([
+      cell(row.date),
+      cell(row.weekday),
+      numberCell(row.week),
+      numberCell(row.planned),
+      numberCell(row.taken),
+      numberCell(row.skipped),
+      cell(`${row.percent}%`),
+    ])),
+  ])}
+  ${worksheet("Historik", [115, 90, 70, 80, 170, 110, 110, 260], [
+    titleRow("Historik"),
+    metaRow(`${historyEntries.length} loggade rader`),
+    blankRow(),
+    headerRow(["Datum", "Veckodag", "Vecka", "Tid", "Medicin", "Dos", "Status", "Anteckning"]),
+    ...historyEntries.map((entry) => {
+      const date = new Date(`${entry.date}T12:00:00`);
+      const style = entry.status === "taken" ? "Taken" : entry.status === "skipped" ? "Skipped" : "Cell";
+      return excelRow([
+        cell(entry.date, style),
+        cell(date.toLocaleDateString("sv-SE", { weekday: "long" }), style),
+        numberCell(getWeekNumber(date), style),
+        cell(entry.time, style),
+        cell(entry.medicine, style),
+        cell(entry.dose, style),
+        cell(statusLabel(entry.status), style),
+        cell(entry.note, style),
+      ]);
+    }),
+  ])}
+  ${worksheet("Standarddag", [90, 180, 120, 280], [
+    titleRow("Standarddag"),
+    metaRow(`${state.template.length} rader i mallen`),
+    blankRow(),
+    headerRow(["Tid", "Medicin", "Dos", "Anteckning"]),
+    ...templateItems().map((item) => excelRow([
+      cell(item.time),
+      cell(item.medicine),
+      cell(item.dose),
+      cell(item.note),
+    ])),
+  ])}
+</Workbook>`;
+      }
+
+      function buildDailySummaryRows(entries) {
+        const dates = [...new Set(entries.map((entry) => entry.date))].sort((a, b) => a.localeCompare(b));
+        return dates.map((dateKey) => {
+          const dateEntries = entries.filter((entry) => entry.date === dateKey);
+          const planned = dateEntries.filter((entry) => entry.status !== "skipped").length;
+          const taken = dateEntries.filter((entry) => entry.status === "taken").length;
+          const skipped = dateEntries.filter((entry) => entry.status === "skipped").length;
+          const date = new Date(`${dateKey}T12:00:00`);
+          return {
+            date: dateKey,
+            weekday: date.toLocaleDateString("sv-SE", { weekday: "long" }),
+            week: getWeekNumber(date),
+            planned,
+            taken,
+            skipped,
+            percent: planned ? Math.round((taken / planned) * 100) : 0,
+          };
+        });
+      }
+
+      function worksheet(name, widths, rows) {
+        return `
+  <Worksheet ss:Name="${escapeXml(name).slice(0, 31)}">
+    <Table>
+      ${widths.map((width) => `<Column ss:Width="${width}"/>`).join("\n      ")}
+      ${rows.join("\n      ")}
+    </Table>
+    <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+      <FreezePanes/>
+      <FrozenNoSplit/>
+      <SplitHorizontal>4</SplitHorizontal>
+      <TopRowBottomPane>4</TopRowBottomPane>
+      <ActivePane>2</ActivePane>
+    </WorksheetOptions>
+  </Worksheet>`;
+      }
+
+      function titleRow(title) {
+        return `<Row ss:Height="28">${cell(title, "Title", "String", 3)}</Row>`;
+      }
+
+      function metaRow(text) {
+        return `<Row>${cell(text, "Meta", "String", 3)}</Row>`;
+      }
+
+      function headerRow(values) {
+        return excelRow(values.map((value) => cell(value, "Header")));
+      }
+
+      function blankRow() {
+        return "<Row/>";
+      }
+
+      function excelRow(cells) {
+        return `<Row>${cells.join("")}</Row>`;
+      }
+
+      function cell(value, style = "Cell", type = "String", mergeAcross = 0) {
+        const merge = mergeAcross ? ` ss:MergeAcross="${mergeAcross}"` : "";
+        return `<Cell ss:StyleID="${style}"${merge}><Data ss:Type="${type}">${escapeXml(value ?? "")}</Data></Cell>`;
+      }
+
+      function numberCell(value, style = "Cell") {
+        return cell(Number.isFinite(value) ? value : 0, style, "Number");
+      }
+
+      function escapeXml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&apos;");
       }
 
       function importData(event) {
