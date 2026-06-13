@@ -548,6 +548,20 @@
         color: #4c431c;
       }
 
+      .danger-zone {
+        border-color: #fecaca;
+        background: #fff7f7;
+      }
+
+      .danger-zone .panel-header {
+        border-bottom-color: #fecaca;
+      }
+
+      .danger-zone p {
+        margin: 0 0 12px;
+        color: #7f1d1d;
+      }
+
       .toast {
         position: fixed;
         right: 16px;
@@ -977,6 +991,16 @@
               <div class="template-list" id="templateList"></div>
             </div>
           </section>
+
+          <section class="panel danger-zone">
+            <div class="panel-header">
+              <h3>Admin</h3>
+            </div>
+            <div class="panel-body">
+              <p>Nollställ testdata inför skarp användning. Standarddagen behålls.</p>
+              <button class="btn danger" id="resetAllDataBtn" type="button">Nollställ loggdata</button>
+            </div>
+          </section>
         </section>
 
         <section class="view" id="historyView">
@@ -1053,6 +1077,7 @@
       document.querySelector("#quickObservationBtn").addEventListener("click", addObservationNow);
       document.querySelector("#addTemplateBtn").addEventListener("click", addTemplateItem);
       document.querySelector("#resetTemplateBtn").addEventListener("click", resetTemplate);
+      document.querySelector("#resetAllDataBtn").addEventListener("click", resetAllData);
       document.querySelector("#goTodayBtn").addEventListener("click", () => {
         els.selectedDate.value = todayKey();
         setView("today");
@@ -1540,6 +1565,27 @@
         saveState();
         render();
         toast("Mallen återställd");
+      }
+
+      function resetAllData() {
+        const hasData = state.entries.length || state.observations.length;
+        if (!hasData) {
+          toast("Det finns ingen loggdata att nollställa");
+          return;
+        }
+        if (!confirm("Nollställ all historik och alla kommentarer? Standarddagen behålls.")) return;
+        const typed = prompt('Skriv NOLLSTÄLL för att bekräfta.');
+        if (typed !== "NOLLSTÄLL") {
+          toast("Nollställning avbruten");
+          return;
+        }
+        state.entries = [];
+        state.observations = [];
+        localStorage.removeItem(oldStorageKey);
+        els.selectedDate.value = todayKey();
+        saveState();
+        render();
+        toast("Loggdata nollställd");
       }
 
       function updateEntry(id, key, value, shouldRender = true) {
