@@ -37,6 +37,7 @@
 
       html {
         background: var(--bg);
+        -webkit-text-size-adjust: 100%;
       }
 
       body {
@@ -136,6 +137,7 @@
         display: grid;
         gap: 12px;
         align-content: start;
+        min-width: 0;
       }
 
       .topbar {
@@ -238,7 +240,7 @@
       }
 
       .btn {
-        min-height: 40px;
+        min-height: 44px;
         border-radius: 8px;
         padding: 0 13px;
         display: inline-flex;
@@ -267,7 +269,7 @@
       }
 
       .btn.small {
-        min-height: 34px;
+        min-height: 38px;
         padding: 0 10px;
       }
 
@@ -280,7 +282,8 @@
       .schedule-list,
       .template-list,
       .history-list,
-      .interval-list {
+      .interval-list,
+      .observation-list {
         display: grid;
         gap: 8px;
       }
@@ -288,7 +291,8 @@
       .slot,
       .template-item,
       .history-row,
-      .interval-row {
+      .interval-row,
+      .observation-row {
         border: 1px solid var(--line);
         border-radius: 8px;
         background: #fff;
@@ -407,11 +411,33 @@
         padding: 11px 12px;
       }
 
+      .observation-form,
+      .observation-row {
+        display: grid;
+        grid-template-columns: 110px minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: end;
+      }
+
+      .observation-row {
+        align-items: center;
+        padding: 11px 12px;
+      }
+
+      .observation-row strong {
+        display: block;
+      }
+
+      .observation-list {
+        margin-top: 10px;
+      }
+
       .interval-row strong {
         display: block;
       }
 
-      .interval-row span {
+      .interval-row span,
+      .observation-row span {
         color: var(--muted);
         font-size: 0.9rem;
       }
@@ -433,7 +459,7 @@
       select,
       textarea {
         width: 100%;
-        min-height: 34px;
+        min-height: 40px;
         border: 1px solid var(--line);
         border-radius: 8px;
         background: #fff;
@@ -553,6 +579,15 @@
 
         aside {
           padding: 18px;
+          gap: 14px;
+        }
+
+        .brand {
+          justify-content: center;
+        }
+
+        .brand p {
+          display: none;
         }
 
         .stats {
@@ -582,8 +617,43 @@
       }
 
       @media (max-width: 640px) {
+        body {
+          font-size: 16px;
+        }
+
+        .app {
+          display: block;
+        }
+
+        aside {
+          padding: max(12px, env(safe-area-inset-top)) 12px 12px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .brand {
+          justify-content: start;
+        }
+
+        .brand-mark {
+          width: 38px;
+          height: 38px;
+        }
+
+        .brand h1 {
+          font-size: 1.1rem;
+        }
+
+        .stat {
+          padding: 10px;
+        }
+
+        .stat strong {
+          font-size: 1.2rem;
+        }
+
         main {
-          padding: 14px;
+          padding: 12px 10px max(22px, env(safe-area-inset-bottom));
+          gap: 10px;
         }
 
         .topbar,
@@ -592,27 +662,125 @@
           flex-direction: column;
         }
 
+        h2 {
+          font-size: 1.15rem;
+          line-height: 1.25;
+        }
+
+        .topbar {
+          gap: 8px;
+        }
+
         .date-control,
         .tabs {
           width: 100%;
         }
 
+        .date-control {
+          gap: 6px;
+          padding: 6px;
+        }
+
+        .date-control input {
+          min-width: 0;
+          text-align: center;
+        }
+
+        .date-control .btn {
+          flex: 0 0 44px;
+          padding: 0;
+        }
+
+        .tabs {
+          position: sticky;
+          top: 0;
+          z-index: 5;
+          box-shadow: 0 8px 18px rgba(17, 24, 23, 0.14);
+        }
+
         .tab {
           flex: 1;
-          padding: 0 8px;
+          min-width: 0;
+          min-height: 46px;
+          padding: 0 6px;
+          font-size: 0.9rem;
         }
 
         .stats,
-        .side-actions,
         .form-grid,
         .interval-summary {
           grid-template-columns: 1fr;
         }
 
+        .stats {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .side-actions {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .side-actions {
+          gap: 8px;
+        }
+
+        .panel {
+          box-shadow: 0 8px 20px rgba(17, 24, 23, 0.08);
+        }
+
+        .panel-header,
+        .panel-body {
+          padding: 10px;
+        }
+
+        .toolbar,
+        .panel-header .toolbar {
+          display: grid;
+          grid-template-columns: 1fr;
+          width: 100%;
+        }
+
+        .toolbar .btn,
+        .side-actions .btn,
+        .panel-header > .btn {
+          width: 100%;
+        }
+
+        .slot-head {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .slot-main {
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .slot-time {
+          flex: 1;
+        }
+
+        .slot-time label {
+          width: 100%;
+        }
+
+        .slot-time input {
+          width: 100%;
+        }
+
+        .check {
+          width: 42px;
+          height: 42px;
+        }
+
         .dose-row,
         .template-item,
-        .interval-row {
+        .interval-row,
+        .observation-form,
+        .observation-row {
           grid-template-columns: 1fr;
+          gap: 9px;
+          padding: 10px;
         }
 
         .dose-row .check {
@@ -622,7 +790,38 @@
         .template-item .toolbar,
         .dose-row .toolbar {
           grid-column: auto;
-          justify-content: flex-end;
+          justify-content: stretch;
+        }
+
+        .template-item > div:first-child {
+          display: none;
+        }
+
+        .history-row {
+          grid-template-columns: auto minmax(0, 1fr);
+          gap: 10px;
+        }
+
+        .history-row .pill {
+          grid-column: 1 / -1;
+          width: fit-content;
+          justify-self: end;
+        }
+
+        .interval-row .pill,
+        .delta {
+          width: fit-content;
+          min-width: 0;
+        }
+
+        .observation-form .btn {
+          width: 100%;
+        }
+
+        .toast {
+          right: 10px;
+          left: 10px;
+          text-align: center;
         }
       }
     </style>
@@ -737,6 +936,27 @@
               <div id="intervalSummary"></div>
             </div>
           </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h3>Kommentarer under dagen</h3>
+              <button class="btn small" id="addObservationBtn" type="button">Spara kommentar</button>
+            </div>
+            <div class="panel-body">
+              <div class="observation-form">
+                <label>
+                  Tid
+                  <input id="observationTime" type="time" />
+                </label>
+                <label>
+                  Kommentar
+                  <input id="observationText" type="text" placeholder="T.ex. biverkning, stelhet, illamående, trötthet" />
+                </label>
+                <button class="btn primary" id="quickObservationBtn" type="button">Nu</button>
+              </div>
+              <div class="observation-list" id="observationList"></div>
+            </div>
+          </section>
         </section>
 
         <section class="view" id="templateView">
@@ -805,6 +1025,9 @@
         selectedDate: document.querySelector("#selectedDate"),
         scheduleList: document.querySelector("#scheduleList"),
         intervalSummary: document.querySelector("#intervalSummary"),
+        observationTime: document.querySelector("#observationTime"),
+        observationText: document.querySelector("#observationText"),
+        observationList: document.querySelector("#observationList"),
         templateList: document.querySelector("#templateList"),
         historyList: document.querySelector("#historyList"),
         dayNotice: document.querySelector("#dayNotice"),
@@ -826,6 +1049,8 @@
       document.querySelector("#nextDay").addEventListener("click", () => shiftDay(1));
       document.querySelector("#createDayBtn").addEventListener("click", createDayFromTemplate);
       document.querySelector("#addDoseBtn").addEventListener("click", addDoseToDay);
+      document.querySelector("#addObservationBtn").addEventListener("click", addObservation);
+      document.querySelector("#quickObservationBtn").addEventListener("click", addObservationNow);
       document.querySelector("#addTemplateBtn").addEventListener("click", addTemplateItem);
       document.querySelector("#resetTemplateBtn").addEventListener("click", resetTemplate);
       document.querySelector("#goTodayBtn").addEventListener("click", () => {
@@ -841,7 +1066,7 @@
         try {
           const parsed = JSON.parse(localStorage.getItem(storageKey));
           if (parsed && Array.isArray(parsed.template) && Array.isArray(parsed.entries)) {
-            return parsed;
+            return { ...parsed, observations: Array.isArray(parsed.observations) ? parsed.observations : [] };
           }
         } catch (error) {}
 
@@ -850,6 +1075,7 @@
           if (old && Array.isArray(old.entries)) {
             return {
               template: withIds(defaultTemplate),
+              observations: [],
               entries: old.entries.map((entry) => ({
                 id: crypto.randomUUID(),
                 date: entry.date,
@@ -864,7 +1090,7 @@
           }
         } catch (error) {}
 
-        return { template: withIds(defaultTemplate), entries: [] };
+        return { template: withIds(defaultTemplate), entries: [], observations: [] };
       }
 
       function withIds(items) {
@@ -879,6 +1105,7 @@
         renderOptionLists();
         renderTitle();
         renderDay();
+        renderObservations();
         renderTemplate();
         renderHistory();
         renderStats();
@@ -991,6 +1218,29 @@
       }
 
       function renderDoseIntervals(entries) {
+        const analysis = buildDoseIntervalAnalysis(entries);
+        const { takenSlots, intervals } = analysis;
+
+        if (takenSlots.length < 2) {
+          els.intervalSummary.innerHTML = `<div class="empty">Minst två tagna tillfällen behövs för att visa mellanrum.</div>`;
+          return;
+        }
+
+        els.intervalSummary.innerHTML = `
+          <div class="interval-summary">
+            ${intervalStat("Tillfällen", takenSlots.length)}
+            ${intervalStat("Snitt", formatDuration(analysis.average))}
+            ${intervalStat("Kortast", formatDuration(analysis.shortest))}
+            ${intervalStat("Längst", formatDuration(analysis.longest))}
+          </div>
+          <div class="notice">Största avvikelse: ${formatDelta(analysis.largestDelta.delta)} (${escapeHtml(analysis.largestDelta.previous.time)} till ${escapeHtml(analysis.largestDelta.current.time)})</div>
+          <div class="interval-list">
+            ${intervals.map((interval) => intervalRow(interval)).join("")}
+          </div>
+        `;
+      }
+
+      function buildDoseIntervalAnalysis(entries) {
         const targetMinutes = 180;
         const takenSlots = groupByTime(entries)
           .filter(([, items]) => items.some((item) => item.status === "taken"))
@@ -1001,37 +1251,19 @@
           }))
           .filter((slot) => Number.isFinite(slot.minutes))
           .sort((a, b) => a.minutes - b.minutes);
-
-        if (takenSlots.length < 2) {
-          els.intervalSummary.innerHTML = `<div class="empty">Minst två tagna tillfällen behövs för att visa mellanrum.</div>`;
-          return;
-        }
-
         const intervals = takenSlots.slice(1).map((slot, index) => {
           const previous = takenSlots[index];
           const minutes = slot.minutes - previous.minutes;
           const delta = minutes - targetMinutes;
           return { previous, current: slot, minutes, delta };
         });
-        const average = Math.round(intervals.reduce((sum, interval) => sum + interval.minutes, 0) / intervals.length);
-        const shortest = Math.min(...intervals.map((interval) => interval.minutes));
-        const longest = Math.max(...intervals.map((interval) => interval.minutes));
+        const average = intervals.length ? Math.round(intervals.reduce((sum, interval) => sum + interval.minutes, 0) / intervals.length) : 0;
+        const shortest = intervals.length ? Math.min(...intervals.map((interval) => interval.minutes)) : 0;
+        const longest = intervals.length ? Math.max(...intervals.map((interval) => interval.minutes)) : 0;
         const largestDelta = intervals.reduce((largest, interval) =>
           Math.abs(interval.delta) > Math.abs(largest.delta) ? interval : largest
-        );
-
-        els.intervalSummary.innerHTML = `
-          <div class="interval-summary">
-            ${intervalStat("Tillfällen", takenSlots.length)}
-            ${intervalStat("Snitt", formatDuration(average))}
-            ${intervalStat("Kortast", formatDuration(shortest))}
-            ${intervalStat("Längst", formatDuration(longest))}
-          </div>
-          <div class="notice">Största avvikelse: ${formatDelta(largestDelta.delta)} (${escapeHtml(largestDelta.previous.time)} till ${escapeHtml(largestDelta.current.time)})</div>
-          <div class="interval-list">
-            ${intervals.map((interval) => intervalRow(interval)).join("")}
-          </div>
-        `;
+        , { delta: 0, previous: { time: "" }, current: { time: "" } });
+        return { targetMinutes, takenSlots, intervals, average, shortest, longest, largestDelta };
       }
 
       function intervalStat(label, value) {
@@ -1055,6 +1287,42 @@
             <span class="pill delta ${deltaClass}">${formatDelta(interval.delta)}</span>
           </article>
         `;
+      }
+
+      function renderObservations() {
+        const observations = observationsForDate(els.selectedDate.value);
+        if (!els.observationTime.value) els.observationTime.value = currentTime();
+        els.observationList.innerHTML = "";
+
+        if (!observations.length) {
+          els.observationList.innerHTML = `<div class="empty">Inga kommentarer för vald dag ännu.</div>`;
+          return;
+        }
+
+        observations.forEach((observation) => {
+          const row = document.createElement("article");
+          row.className = "observation-row";
+          row.innerHTML = `
+            <label>
+              Tid
+              <input data-observation-id="${observation.id}" data-observation-field="time" type="time" value="${escapeAttr(observation.time)}" />
+            </label>
+            <label>
+              Kommentar
+              <input data-observation-id="${observation.id}" data-observation-field="text" type="text" value="${escapeAttr(observation.text)}" />
+            </label>
+            <button class="btn small danger" type="button" title="Ta bort kommentar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" />
+              </svg>
+            </button>
+          `;
+          row.querySelector(".danger").addEventListener("click", () => deleteObservation(observation.id));
+          row.querySelectorAll("[data-observation-field]").forEach((input) => {
+            input.addEventListener("change", () => updateObservation(input.dataset.observationId, input.dataset.observationField, input.value));
+          });
+          els.observationList.append(row);
+        });
       }
 
       function renderTemplate() {
@@ -1227,6 +1495,31 @@
         toast("Ny rad tillagd");
       }
 
+      function addObservation() {
+        const text = els.observationText.value.trim();
+        if (!text) {
+          toast("Skriv en kommentar först");
+          return;
+        }
+        state.observations.push({
+          id: crypto.randomUUID(),
+          date: els.selectedDate.value,
+          time: els.observationTime.value || currentTime(),
+          text,
+          createdAt: new Date().toISOString(),
+        });
+        els.observationText.value = "";
+        els.observationTime.value = currentTime();
+        saveState();
+        render();
+        toast("Kommentar sparad");
+      }
+
+      function addObservationNow() {
+        els.observationTime.value = currentTime();
+        addObservation();
+      }
+
       function addTemplateItem() {
         state.template.push({
           id: crypto.randomUUID(),
@@ -1281,6 +1574,14 @@
         saveState();
       }
 
+      function updateObservation(id, key, value) {
+        const observation = state.observations.find((item) => item.id === id);
+        if (!observation) return;
+        observation[key] = value.trim ? value.trim() : value;
+        saveState();
+        render();
+      }
+
       function toggleEntry(id) {
         const entry = state.entries.find((item) => item.id === id);
         if (!entry) return;
@@ -1315,6 +1616,13 @@
         toast("Mallrad borttagen");
       }
 
+      function deleteObservation(id) {
+        state.observations = state.observations.filter((item) => item.id !== id);
+        saveState();
+        render();
+        toast("Kommentar borttagen");
+      }
+
       function entriesForDate(date) {
         return state.entries
           .filter((entry) => entry.date === date)
@@ -1325,6 +1633,12 @@
         return state.template
           .slice()
           .sort((a, b) => a.time.localeCompare(b.time) || (a.order ?? 0) - (b.order ?? 0));
+      }
+
+      function observationsForDate(date) {
+        return state.observations
+          .filter((observation) => observation.date === date)
+          .sort((a, b) => a.time.localeCompare(b.time) || (a.createdAt || "").localeCompare(b.createdAt || ""));
       }
 
       function groupByTime(entries) {
@@ -1366,6 +1680,8 @@
           .slice()
           .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
         const dailyRows = buildDailySummaryRows(historyEntries);
+        const intervalExportRows = buildIntervalExportRows(historyEntries);
+        const observationExportRows = buildObservationExportRows();
         const overviewRows = [
           xlsxTextRow(["Medicinlogg"], 2, 26),
           xlsxTextRow([`Exporterad ${generatedAt.toLocaleString("sv-SE")}`], 3),
@@ -1403,6 +1719,40 @@
             ]);
           }),
         ];
+        const intervalRows = [
+          xlsxTextRow(["Mellanrum"], 2, 26),
+          xlsxTextRow([`${intervalExportRows.length} uppmätta mellanrum`], 3),
+          xlsxBlankRow(),
+          xlsxTextRow(["Datum", "Från", "Till", "Mellanrum", "Avvikelse från 3 tim", "Tagna mediciner vid till", "Bedömning"], 4),
+          ...intervalExportRows.map((row) =>
+            xlsxRow([
+              xlsxText(row.date),
+              xlsxText(row.from),
+              xlsxText(row.to),
+              xlsxText(formatDuration(row.minutes)),
+              xlsxText(formatDelta(row.delta), Math.abs(row.delta) <= 15 ? 5 : 6),
+              xlsxText(row.medicines),
+              xlsxText(Math.abs(row.delta) <= 15 ? "Nära mål" : "Avvikelse"),
+            ])
+          ),
+        ];
+        const observationRows = [
+          xlsxTextRow(["Kommentarer"], 2, 26),
+          xlsxTextRow([`${observationExportRows.length} kommentarer`], 3),
+          xlsxBlankRow(),
+          xlsxTextRow(["Datum", "Tid", "Kommentar", "Senaste tagna tillfälle", "Tid sedan senaste", "Nästa tagna tillfälle", "Tid till nästa"], 4),
+          ...observationExportRows.map((row) =>
+            xlsxRow([
+              xlsxText(row.date),
+              xlsxText(row.time),
+              xlsxText(row.text),
+              xlsxText(row.previousTime),
+              xlsxText(row.minutesSincePrevious === "" ? "" : formatDuration(row.minutesSincePrevious)),
+              xlsxText(row.nextTime),
+              xlsxText(row.minutesUntilNext === "" ? "" : formatDuration(row.minutesUntilNext)),
+            ])
+          ),
+        ];
         const templateRows = [
           xlsxTextRow(["Standarddag"], 2, 26),
           xlsxTextRow([`${state.template.length} rader i mallen`], 3),
@@ -1428,7 +1778,9 @@
           ["xl/styles.xml", xlsxStylesXml()],
           ["xl/worksheets/sheet1.xml", xlsxWorksheetXml([18, 18, 12, 12, 12, 15, 14], overviewRows)],
           ["xl/worksheets/sheet2.xml", xlsxWorksheetXml([16, 14, 10, 11, 24, 16, 16, 38], historyRows)],
-          ["xl/worksheets/sheet3.xml", xlsxWorksheetXml([12, 26, 18, 42], templateRows)],
+          ["xl/worksheets/sheet3.xml", xlsxWorksheetXml([16, 11, 11, 16, 20, 34, 16], intervalRows)],
+          ["xl/worksheets/sheet4.xml", xlsxWorksheetXml([16, 11, 44, 20, 18, 20, 18], observationRows)],
+          ["xl/worksheets/sheet5.xml", xlsxWorksheetXml([12, 26, 18, 42], templateRows)],
         ]);
       }
 
@@ -1452,13 +1804,52 @@
         });
       }
 
+      function buildIntervalExportRows(entries) {
+        const dates = [...new Set(entries.map((entry) => entry.date))].sort((a, b) => a.localeCompare(b));
+        return dates.flatMap((date) => {
+          const analysis = buildDoseIntervalAnalysis(entries.filter((entry) => entry.date === date));
+          return analysis.intervals.map((interval) => ({
+            date,
+            from: interval.previous.time,
+            to: interval.current.time,
+            minutes: interval.minutes,
+            delta: interval.delta,
+            medicines: uniqueList(interval.current.medicines).join(", "),
+          }));
+        });
+      }
+
+      function buildObservationExportRows() {
+        return state.observations
+          .slice()
+          .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))
+          .map((observation) => {
+            const slots = buildDoseIntervalAnalysis(entriesForDate(observation.date)).takenSlots;
+            const observationMinutes = timeToMinutes(observation.time);
+            const previousSlots = slots.filter((slot) => slot.minutes <= observationMinutes);
+            const previous = previousSlots[previousSlots.length - 1];
+            const next = slots.find((slot) => slot.minutes >= observationMinutes);
+            return {
+              date: observation.date,
+              time: observation.time,
+              text: observation.text,
+              previousTime: previous?.time || "",
+              minutesSincePrevious: previous ? observationMinutes - previous.minutes : "",
+              nextTime: next?.time || "",
+              minutesUntilNext: next ? next.minutes - observationMinutes : "",
+            };
+          });
+      }
+
       function xlsxWorkbookXml() {
         return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <sheets>
     <sheet name="Översikt" sheetId="1" r:id="rId1"/>
     <sheet name="Historik" sheetId="2" r:id="rId2"/>
-    <sheet name="Standarddag" sheetId="3" r:id="rId3"/>
+    <sheet name="Mellanrum" sheetId="3" r:id="rId3"/>
+    <sheet name="Kommentarer" sheetId="4" r:id="rId4"/>
+    <sheet name="Standarddag" sheetId="5" r:id="rId5"/>
   </sheets>
 </workbook>`;
       }
@@ -1536,6 +1927,8 @@
   <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
   <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
   <Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/worksheets/sheet4.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/worksheets/sheet5.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
 </Types>`;
       }
 
@@ -1554,7 +1947,9 @@
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
   <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
   <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/>
-  <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+  <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet4.xml"/>
+  <Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet5.xml"/>
+  <Relationship Id="rId6" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
 </Relationships>`;
       }
 
@@ -1738,6 +2133,7 @@
             if (!Array.isArray(imported.template) || !Array.isArray(imported.entries)) throw new Error("Fel format");
             state.template = imported.template;
             state.entries = imported.entries;
+            state.observations = Array.isArray(imported.observations) ? imported.observations : [];
             saveState();
             render();
             toast("Data importerad");
