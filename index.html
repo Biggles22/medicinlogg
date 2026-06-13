@@ -1,0 +1,1311 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#12211f" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Medicinlogg" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="description" content="Lokal medicinlogg med standarddag och dagliga justeringar." />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
+    <title>Medicinlogg</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #eef6e4;
+        --ink: #111817;
+        --muted: #61706d;
+        --line: #cdd8d3;
+        --surface: #ffffff;
+        --surface-2: #f2f6f4;
+        --dark: #17201f;
+        --primary: #0f766e;
+        --primary-2: #0b5f59;
+        --blue: #cae0ff;
+        --cyan: #75d1ed;
+        --danger: #b91c1c;
+        --ok: #15803d;
+        --shadow: 0 12px 34px rgba(17, 24, 23, 0.1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        background: var(--bg);
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.45;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        border: 0;
+        cursor: pointer;
+      }
+
+      .app {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 300px minmax(0, 1fr);
+      }
+
+      aside {
+        background: var(--dark);
+        color: white;
+        padding: max(22px, env(safe-area-inset-top)) 22px 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .brand-mark {
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        background: #e8fff8;
+        color: var(--primary-2);
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-size: 1.25rem;
+      }
+
+      .brand p {
+        margin: 2px 0 0;
+        color: #bccac7;
+        font-size: 0.9rem;
+      }
+
+      .stats {
+        display: grid;
+        gap: 10px;
+      }
+
+      .stat {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.11);
+        border-radius: 8px;
+        padding: 14px;
+      }
+
+      .stat span {
+        color: #bccac7;
+        font-size: 0.82rem;
+      }
+
+      .stat strong {
+        display: block;
+        margin-top: 4px;
+        font-size: 1.55rem;
+      }
+
+      .side-actions {
+        margin-top: auto;
+        display: grid;
+        gap: 10px;
+      }
+
+      main {
+        padding: max(22px, env(safe-area-inset-top)) 22px 28px;
+        display: grid;
+        gap: 12px;
+        align-content: start;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: clamp(1.55rem, 3vw, 2.25rem);
+      }
+
+      .date-control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #ffffb0;
+        border: 1px solid #b7b78c;
+        border-radius: 8px;
+        padding: 8px;
+        box-shadow: var(--shadow);
+      }
+
+      .date-control input {
+        min-width: 150px;
+        border: 0;
+        background: transparent;
+        padding: 8px;
+      }
+
+      .tabs {
+        display: inline-flex;
+        width: fit-content;
+        border: 1px solid #8c9390;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #303030;
+      }
+
+      .tab {
+        min-height: 42px;
+        padding: 0 15px;
+        background: #303030;
+        color: #e9e9e9;
+        border-right: 1px solid #8c9390;
+        font-weight: 760;
+      }
+
+      .tab:last-child {
+        border-right: 0;
+      }
+
+      .tab.active {
+        background: #bde3a6;
+        color: #06110f;
+      }
+
+      .view {
+        display: none;
+      }
+
+      .view.active {
+        display: grid;
+        gap: 16px;
+      }
+
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .panel-header h3 {
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      .panel-body {
+        padding: 10px;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn {
+        min-height: 40px;
+        border-radius: 8px;
+        padding: 0 13px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 1px solid var(--line);
+        background: var(--surface-2);
+        color: var(--ink);
+        font-weight: 760;
+      }
+
+      .btn.primary {
+        border-color: var(--primary);
+        background: var(--primary);
+        color: white;
+      }
+
+      .btn.ghost {
+        background: transparent;
+        color: inherit;
+      }
+
+      .btn.danger {
+        color: var(--danger);
+      }
+
+      .btn.small {
+        min-height: 34px;
+        padding: 0 10px;
+      }
+
+      .btn svg {
+        width: 18px;
+        height: 18px;
+        flex: 0 0 auto;
+      }
+
+      .schedule-list,
+      .template-list,
+      .history-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .slot,
+      .template-item,
+      .history-row {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        overflow: hidden;
+      }
+
+      .slot:nth-child(odd) .slot-head,
+      .slot:nth-child(odd) .dose-row {
+        background: var(--cyan);
+      }
+
+      .slot:nth-child(even) .slot-head,
+      .slot:nth-child(even) .dose-row {
+        background: var(--blue);
+      }
+
+      .slot-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 7px 10px;
+        border-bottom: 1px solid rgba(17, 24, 23, 0.08);
+      }
+
+      .slot-main {
+        display: flex;
+        align-items: end;
+        gap: 10px;
+      }
+
+      .time-pill {
+        width: fit-content;
+        min-width: 78px;
+        border: 1px solid #d4d4d4;
+        border-radius: 8px;
+        background: linear-gradient(#ffffff, #ececec);
+        padding: 5px 9px;
+        font-size: 1rem;
+        font-weight: 800;
+      }
+
+      .dose-row {
+        display: grid;
+        grid-template-columns: minmax(120px, 1fr) 92px minmax(120px, 1fr) 138px;
+        gap: 6px;
+        align-items: center;
+        padding: 7px 10px 9px;
+      }
+
+      .template-item {
+        display: grid;
+        grid-template-columns: 34px minmax(120px, 1fr) 96px minmax(120px, 1fr) auto;
+        gap: 6px;
+        align-items: end;
+        padding: 9px 10px;
+      }
+
+      .slot-time {
+        display: flex;
+        align-items: end;
+        gap: 8px;
+      }
+
+      .slot-time label {
+        color: rgba(17, 24, 23, 0.7);
+      }
+
+      .slot-time input {
+        width: 100px;
+        background: linear-gradient(#ffffff, #ececec);
+        font-size: 1rem;
+        font-weight: 800;
+      }
+
+      .history-row {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+        padding: 13px;
+      }
+
+      label {
+        display: grid;
+        gap: 3px;
+        color: var(--muted);
+        font-size: 0.68rem;
+        font-weight: 760;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        min-height: 34px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--ink);
+        padding: 6px 8px;
+        outline: none;
+      }
+
+      textarea {
+        min-height: 40px;
+        resize: vertical;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+      }
+
+      .check {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        display: grid;
+        place-items: center;
+        background: rgba(255, 255, 255, 0.7);
+        color: transparent;
+      }
+
+      .done .check,
+      .check.done {
+        background: #e8f8ed;
+        color: var(--ok);
+        border-color: #bfe8ca;
+      }
+
+      .pill {
+        border-radius: 999px;
+        padding: 5px 9px;
+        background: #fef3c7;
+        color: #92400e;
+        font-size: 0.76rem;
+        font-weight: 850;
+      }
+
+      .pill.done {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      .meta strong {
+        display: block;
+      }
+
+      .meta span {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .empty {
+        border: 1px dashed var(--line);
+        border-radius: 8px;
+        padding: 22px;
+        color: var(--muted);
+        background: #fbfcfc;
+        text-align: center;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .span-2 {
+        grid-column: 1 / -1;
+      }
+
+      .notice {
+        border: 1px solid #d1c089;
+        background: #fff7cc;
+        border-radius: 8px;
+        padding: 9px 11px;
+        color: #4c431c;
+      }
+
+      .toast {
+        position: fixed;
+        right: 16px;
+        bottom: max(16px, env(safe-area-inset-bottom));
+        padding: 12px 14px;
+        background: var(--dark);
+        color: white;
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        transform: translateY(16px);
+        opacity: 0;
+        pointer-events: none;
+        transition: 160ms ease;
+      }
+
+      .toast.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 1050px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+
+        aside {
+          padding: 18px;
+        }
+
+        .stats {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .side-actions {
+          margin-top: 0;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .dose-row,
+        .template-item {
+          grid-template-columns: minmax(130px, 1fr) minmax(105px, 0.8fr);
+        }
+
+        .dose-row label:nth-of-type(4),
+        .template-item label:nth-of-type(4),
+        .dose-row .toolbar,
+        .template-item .toolbar {
+          grid-column: 1 / -1;
+        }
+      }
+
+      @media (max-width: 640px) {
+        main {
+          padding: 14px;
+        }
+
+        .topbar,
+        .panel-header {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .date-control,
+        .tabs {
+          width: 100%;
+        }
+
+        .tab {
+          flex: 1;
+          padding: 0 8px;
+        }
+
+        .stats,
+        .side-actions,
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .dose-row,
+        .template-item {
+          grid-template-columns: 1fr;
+        }
+
+        .dose-row .check {
+          justify-self: start;
+        }
+
+        .template-item .toolbar,
+        .dose-row .toolbar {
+          grid-column: auto;
+          justify-content: flex-end;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside>
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10 21h4" />
+              <path d="M12 17v4" />
+              <path d="M8.5 4.5a4.95 4.95 0 0 1 7 7L11 16l-7-7 4.5-4.5Z" />
+              <path d="m13 6-6 6" />
+            </svg>
+          </div>
+          <div>
+            <h1>Medicinlogg</h1>
+            <p>Standarddag + justeringar</p>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <span>Dagens status</span>
+            <strong id="todayPercent">0%</strong>
+          </div>
+          <div class="stat">
+            <span>Tagna idag</span>
+            <strong id="takenToday">0</strong>
+          </div>
+          <div class="stat">
+            <span>Planerade</span>
+            <strong id="plannedToday">0</strong>
+          </div>
+        </div>
+
+        <div class="side-actions">
+          <button class="btn ghost" id="exportBtn" type="button" title="Exportera data">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 3v12" />
+              <path d="m7 10 5 5 5-5" />
+              <path d="M5 21h14" />
+            </svg>
+            Exportera
+          </button>
+          <label class="btn ghost" title="Importera data">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 21V9" />
+              <path d="m7 14 5-5 5 5" />
+              <path d="M5 3h14" />
+            </svg>
+            Importera
+            <input class="hidden" id="importInput" type="file" accept="application/json" />
+          </label>
+        </div>
+      </aside>
+
+      <main>
+        <div class="topbar">
+          <div>
+            <h2 id="dateTitle">Idag</h2>
+          </div>
+          <div class="date-control">
+            <button class="btn small" id="prevDay" type="button" title="Föregående dag">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6" /></svg>
+            </button>
+            <input id="selectedDate" type="date" />
+            <button class="btn small" id="nextDay" type="button" title="Nästa dag">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6" /></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="Vyer">
+          <button class="tab active" data-view="today" type="button">Dag</button>
+          <button class="tab" data-view="template" type="button">Standarddag</button>
+          <button class="tab" data-view="history" type="button">Historik</button>
+        </div>
+
+        <section class="view active" id="todayView">
+          <section class="panel">
+            <div class="panel-header">
+              <h3>Dagens medicinering</h3>
+              <div class="toolbar">
+                <button class="btn primary" id="createDayBtn" type="button">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8 2v4" /><path d="M16 2v4" /><path d="M3 10h18" /><path d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+                  </svg>
+                  Skapa standarddag
+                </button>
+                <button class="btn" id="addDoseBtn" type="button">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14" /><path d="M5 12h14" />
+                  </svg>
+                  Ny rad
+                </button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="notice" id="dayNotice">Skapa dagen från standardmallen och justera sedan tider eller doser vid behov.</div>
+              <div class="schedule-list" id="scheduleList"></div>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="templateView">
+          <section class="panel">
+            <div class="panel-header">
+              <h3>Standarddag</h3>
+              <div class="toolbar">
+                <button class="btn" id="addTemplateBtn" type="button">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14" /><path d="M5 12h14" />
+                  </svg>
+                  Ny medicinrad
+                </button>
+                <button class="btn danger" id="resetTemplateBtn" type="button">Återställ mall</button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="template-list" id="templateList"></div>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="historyView">
+          <section class="panel">
+            <div class="panel-header">
+              <h3>Historik</h3>
+              <button class="btn small" id="goTodayBtn" type="button">Idag</button>
+            </div>
+            <div class="panel-body">
+              <div class="history-list" id="historyList"></div>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <datalist id="medicineOptions"></datalist>
+    <datalist id="doseOptions"></datalist>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script>
+      const storageKey = "medicinlogg.v2";
+      const oldStorageKey = "medicinlogg.v1";
+
+      const defaultTemplate = [
+        { time: "07:00", medicine: "Madopark", dose: "150 mg", note: "" },
+        { time: "07:00", medicine: "Entacapone", dose: "200 mg", note: "" },
+        { time: "07:00", medicine: "Plåster", dose: "4 mg", note: "" },
+        { time: "07:00", medicine: "Atorbir", dose: "10 mg", note: "" },
+        { time: "10:00", medicine: "Madopark", dose: "150 mg", note: "" },
+        { time: "10:00", medicine: "Entacapone", dose: "200 mg", note: "" },
+        { time: "13:00", medicine: "Madopark", dose: "150 mg", note: "" },
+        { time: "13:00", medicine: "Entacapone", dose: "200 mg", note: "" },
+        { time: "16:00", medicine: "Madopark", dose: "150 mg", note: "" },
+        { time: "16:00", medicine: "Entacapone", dose: "200 mg", note: "" },
+        { time: "19:00", medicine: "Madopark", dose: "150 mg", note: "" },
+        { time: "19:00", medicine: "Entacapone", dose: "200 mg", note: "" },
+      ];
+
+      const state = loadState();
+      const els = {
+        todayPercent: document.querySelector("#todayPercent"),
+        takenToday: document.querySelector("#takenToday"),
+        plannedToday: document.querySelector("#plannedToday"),
+        dateTitle: document.querySelector("#dateTitle"),
+        selectedDate: document.querySelector("#selectedDate"),
+        scheduleList: document.querySelector("#scheduleList"),
+        templateList: document.querySelector("#templateList"),
+        historyList: document.querySelector("#historyList"),
+        dayNotice: document.querySelector("#dayNotice"),
+        medicineOptions: document.querySelector("#medicineOptions"),
+        doseOptions: document.querySelector("#doseOptions"),
+        toast: document.querySelector("#toast"),
+        importInput: document.querySelector("#importInput"),
+      };
+
+      els.selectedDate.value = todayKey();
+      saveState();
+      render();
+      registerServiceWorker();
+
+      document.querySelectorAll(".tab").forEach((tab) => {
+        tab.addEventListener("click", () => setView(tab.dataset.view));
+      });
+      document.querySelector("#prevDay").addEventListener("click", () => shiftDay(-1));
+      document.querySelector("#nextDay").addEventListener("click", () => shiftDay(1));
+      document.querySelector("#createDayBtn").addEventListener("click", createDayFromTemplate);
+      document.querySelector("#addDoseBtn").addEventListener("click", addDoseToDay);
+      document.querySelector("#addTemplateBtn").addEventListener("click", addTemplateItem);
+      document.querySelector("#resetTemplateBtn").addEventListener("click", resetTemplate);
+      document.querySelector("#goTodayBtn").addEventListener("click", () => {
+        els.selectedDate.value = todayKey();
+        setView("today");
+        render();
+      });
+      document.querySelector("#exportBtn").addEventListener("click", exportData);
+      els.importInput.addEventListener("change", importData);
+      els.selectedDate.addEventListener("change", render);
+
+      function loadState() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(storageKey));
+          if (parsed && Array.isArray(parsed.template) && Array.isArray(parsed.entries)) {
+            return parsed;
+          }
+        } catch (error) {}
+
+        try {
+          const old = JSON.parse(localStorage.getItem(oldStorageKey));
+          if (old && Array.isArray(old.entries)) {
+            return {
+              template: withIds(defaultTemplate),
+              entries: old.entries.map((entry) => ({
+                id: crypto.randomUUID(),
+                date: entry.date,
+                time: entry.time || "08:00",
+                medicine: entry.name || "Medicin",
+                dose: entry.dose || "",
+                note: entry.note || "",
+                status: entry.status || "planned",
+                createdAt: entry.createdAt || new Date().toISOString(),
+              })),
+            };
+          }
+        } catch (error) {}
+
+        return { template: withIds(defaultTemplate), entries: [] };
+      }
+
+      function withIds(items) {
+        return items.map((item, index) => ({ id: crypto.randomUUID(), order: index, ...item }));
+      }
+
+      function saveState() {
+        localStorage.setItem(storageKey, JSON.stringify(state));
+      }
+
+      function render() {
+        renderOptionLists();
+        renderTitle();
+        renderDay();
+        renderTemplate();
+        renderHistory();
+        renderStats();
+      }
+
+      function renderOptionLists() {
+        renderDatalist(els.medicineOptions, optionValues("medicine"));
+        renderDatalist(els.doseOptions, optionValues("dose"));
+      }
+
+      function renderDatalist(element, values) {
+        element.innerHTML = "";
+        values.forEach((value) => {
+          const option = document.createElement("option");
+          option.value = value;
+          element.append(option);
+        });
+      }
+
+      function optionValues(key) {
+        const values = new Set();
+        defaultTemplate.forEach((item) => {
+          if (item[key]) values.add(item[key]);
+        });
+        state.template.forEach((item) => {
+          if (item[key]) values.add(item[key]);
+        });
+        state.entries.forEach((entry) => {
+          if (entry[key]) values.add(entry[key]);
+        });
+        return [...values].sort((a, b) => a.localeCompare(b, "sv", { numeric: true }));
+      }
+
+      function renderTitle() {
+        const selected = els.selectedDate.value;
+        const date = new Date(`${selected}T12:00:00`);
+        const week = getWeekNumber(date);
+        const day = date.toLocaleDateString("sv-SE", { weekday: "long" });
+        els.dateTitle.textContent = `${selected} · ${day} · V ${week}`;
+      }
+
+      function renderDay() {
+        const entries = entriesForDate(els.selectedDate.value);
+        els.dayNotice.classList.toggle("hidden", entries.length > 0);
+        els.scheduleList.innerHTML = "";
+
+        if (!entries.length) {
+          els.scheduleList.innerHTML = `<div class="empty">Ingen standarddag skapad för vald dag ännu.</div>`;
+          return;
+        }
+
+        groupByTime(entries).forEach(([time, items]) => {
+          const slotId = `day-${els.selectedDate.value}-${time}`.replaceAll(":", "");
+          const allTaken = items.every((item) => item.status === "taken");
+          const slot = document.createElement("article");
+          slot.className = "slot";
+          slot.innerHTML = `
+            <div class="slot-head">
+              <div class="slot-main">
+                <button class="check ${allTaken ? "done" : ""}" type="button" title="Markera hela tillfället som taget">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 13 4 4L19 7" /></svg>
+                </button>
+                <div class="slot-time">
+                  <label for="${slotId}">
+                    Tillfälle
+                    <input id="${slotId}" class="slot-time-input" type="time" value="${escapeAttr(time)}" />
+                  </label>
+                </div>
+              </div>
+              <span class="pill ${allTaken ? "done" : ""}">${allTaken ? "Tagen" : `${items.length} medicin${items.length === 1 ? "" : "er"}`}</span>
+            </div>
+          `;
+
+          slot.querySelector(".check").addEventListener("click", () => toggleEntryGroup(items.map((item) => item.id)));
+          slot.querySelector(".slot-time-input").addEventListener("change", (event) => {
+            updateEntryGroupTime(items.map((item) => item.id), event.target.value);
+          });
+
+          items.forEach((entry, index) => {
+            const row = document.createElement("div");
+            row.className = `dose-row ${entry.status === "taken" ? "done" : ""}`;
+            row.innerHTML = `
+              ${field("Medicin", "text", entry.medicine, entry.id, "medicine")}
+              ${field("Dos", "text", entry.dose, entry.id, "dose")}
+              ${field("Justering/anteckning", "text", entry.note, entry.id, "note")}
+              <div class="toolbar">
+                <select class="entry-status" data-id="${entry.id}" aria-label="Status">
+                  ${statusOption("planned", entry.status)}
+                  ${statusOption("taken", entry.status)}
+                  ${statusOption("skipped", entry.status)}
+                </select>
+                <button class="btn small danger" type="button" title="Ta bort rad">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" />
+                  </svg>
+                </button>
+              </div>
+            `;
+            row.querySelector(".danger").addEventListener("click", () => deleteEntry(entry.id));
+            row.querySelectorAll("[data-field]").forEach((input) => {
+              input.addEventListener("change", () => updateEntry(input.dataset.id, input.dataset.field, input.value, false));
+            });
+            row.querySelector(".entry-status").addEventListener("change", (event) => updateEntry(entry.id, "status", event.target.value, true));
+            slot.append(row);
+          });
+
+          els.scheduleList.append(slot);
+        });
+      }
+
+      function renderTemplate() {
+        els.templateList.innerHTML = "";
+        groupByTime(templateItems()).forEach(([time, items]) => {
+          const slotId = `template-${time}`.replaceAll(":", "");
+          const slot = document.createElement("article");
+          slot.className = "slot";
+          slot.innerHTML = `
+            <div class="slot-head">
+              <div class="slot-time">
+                <label for="${slotId}">
+                  Tillfälle
+                  <input id="${slotId}" class="template-time-input" type="time" value="${escapeAttr(time)}" />
+                </label>
+              </div>
+              <span class="pill">${items.length} medicin${items.length === 1 ? "" : "er"}</span>
+            </div>
+          `;
+
+          slot.querySelector(".template-time-input").addEventListener("change", (event) => {
+            updateTemplateGroupTime(items.map((item) => item.id), event.target.value);
+          });
+
+          items.forEach((item) => {
+            const row = document.createElement("article");
+            row.className = "template-item";
+            row.innerHTML = `
+              <div></div>
+              ${templateField("Medicin", "text", item.medicine, item.id, "medicine")}
+              ${templateField("Dos", "text", item.dose, item.id, "dose")}
+              ${templateField("Anteckning", "text", item.note, item.id, "note")}
+              <div class="toolbar">
+                <button class="btn small danger" type="button" title="Ta bort från mall">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" />
+                  </svg>
+                </button>
+              </div>
+            `;
+            row.querySelector(".danger").addEventListener("click", () => deleteTemplateItem(item.id));
+            row.querySelectorAll("[data-template-field]").forEach((input) => {
+              input.addEventListener("change", () => updateTemplate(input.dataset.id, input.dataset.templateField, input.value, false));
+            });
+            slot.append(row);
+          });
+          els.templateList.append(slot);
+        });
+      }
+
+      function renderHistory() {
+        const entries = state.entries
+          .slice()
+          .sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
+        els.historyList.innerHTML = "";
+
+        if (!entries.length) {
+          els.historyList.innerHTML = `<div class="empty">Ingen historik ännu.</div>`;
+          return;
+        }
+
+        entries.slice(0, 140).forEach((entry) => {
+          const row = document.createElement("article");
+          row.className = "history-row";
+          row.innerHTML = `
+            <div class="check ${entry.status === "taken" ? "done" : ""}" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 13 4 4L19 7" /></svg>
+            </div>
+            <div class="meta">
+              <strong>${escapeHtml(entry.medicine)}</strong>
+              <span>${formatDate(entry.date)} · ${escapeHtml(entry.time)} · ${escapeHtml(entry.dose || "Ingen dos")}${entry.note ? ` · ${escapeHtml(entry.note)}` : ""}</span>
+            </div>
+            <span class="pill ${entry.status === "taken" ? "done" : ""}">${statusLabel(entry.status)}</span>
+          `;
+          els.historyList.append(row);
+        });
+      }
+
+      function renderStats() {
+        const entries = entriesForDate(els.selectedDate.value);
+        const planned = entries.filter((entry) => entry.status !== "skipped").length;
+        const taken = entries.filter((entry) => entry.status === "taken").length;
+        const percent = planned ? Math.round((taken / planned) * 100) : 0;
+        els.todayPercent.textContent = `${percent}%`;
+        els.takenToday.textContent = taken;
+        els.plannedToday.textContent = planned;
+      }
+
+      function field(label, type, value, id, key) {
+        if (key === "medicine" || key === "dose") {
+          return selectField(label, value, id, key, false);
+        }
+        return `
+          <label>
+            ${label}
+            <input data-id="${id}" data-field="${key}" type="${type}" value="${escapeAttr(value)}" />
+          </label>
+        `;
+      }
+
+      function templateField(label, type, value, id, key) {
+        if (key === "medicine" || key === "dose") {
+          return selectField(label, value, id, key, true);
+        }
+        return `
+          <label>
+            ${label}
+            <input data-id="${id}" data-template-field="${key}" type="${type}" value="${escapeAttr(value)}" />
+          </label>
+        `;
+      }
+
+      function selectField(label, value, id, key, isTemplate) {
+        const values = optionValues(key);
+        if (value && !values.includes(value)) values.push(value);
+        const dataAttr = isTemplate ? "data-template-field" : "data-field";
+        return `
+          <label>
+            ${label}
+            <select data-id="${id}" ${dataAttr}="${key}">
+              ${values.map((option) => `<option value="${escapeAttr(option)}" ${option === value ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}
+            </select>
+          </label>
+        `;
+      }
+
+      function statusOption(value, selected) {
+        return `<option value="${value}" ${value === selected ? "selected" : ""}>${statusLabel(value)}</option>`;
+      }
+
+      function createDayFromTemplate() {
+        const date = els.selectedDate.value;
+        const existing = entriesForDate(date).length;
+        if (existing && !confirm("Dagen har redan rader. Vill du ersätta dem med standarddagen?")) return;
+        if (existing) {
+          state.entries = state.entries.filter((entry) => entry.date !== date);
+        }
+        state.template.forEach((item) => {
+          state.entries.push({
+            id: crypto.randomUUID(),
+            date,
+            time: item.time,
+            medicine: item.medicine,
+            dose: item.dose,
+            note: item.note,
+            order: item.order ?? 0,
+            status: "planned",
+            createdAt: new Date().toISOString(),
+          });
+        });
+        saveState();
+        render();
+        toast("Standarddag skapad");
+      }
+
+      function addDoseToDay() {
+        state.entries.push({
+          id: crypto.randomUUID(),
+          date: els.selectedDate.value,
+          time: currentTime(),
+          medicine: "Ny medicin",
+          dose: "",
+          note: "",
+          order: Date.now(),
+          status: "planned",
+          createdAt: new Date().toISOString(),
+        });
+        saveState();
+        render();
+        toast("Ny rad tillagd");
+      }
+
+      function addTemplateItem() {
+        state.template.push({
+          id: crypto.randomUUID(),
+          time: "08:00",
+          medicine: "Ny medicin",
+          dose: "",
+          note: "",
+          order: state.template.length,
+        });
+        saveState();
+        render();
+        toast("Mallrad tillagd");
+      }
+
+      function resetTemplate() {
+        if (!confirm("Återställ standarddagen till tiderna och medicinerna från bilderna?")) return;
+        state.template = withIds(defaultTemplate);
+        saveState();
+        render();
+        toast("Mallen återställd");
+      }
+
+      function updateEntry(id, key, value, shouldRender = true) {
+        const entry = state.entries.find((item) => item.id === id);
+        if (!entry) return;
+        entry[key] = value.trim ? value.trim() : value;
+        saveState();
+        if (shouldRender) render();
+      }
+
+      function updateEntryGroupTime(ids, value) {
+        ids.forEach((id) => {
+          const entry = state.entries.find((item) => item.id === id);
+          if (entry) entry.time = value;
+        });
+        saveState();
+      }
+
+      function updateTemplate(id, key, value, shouldRender = true) {
+        const item = state.template.find((templateItem) => templateItem.id === id);
+        if (!item) return;
+        item[key] = value.trim ? value.trim() : value;
+        saveState();
+        if (shouldRender) render();
+      }
+
+      function updateTemplateGroupTime(ids, value) {
+        ids.forEach((id) => {
+          const item = state.template.find((templateItem) => templateItem.id === id);
+          if (item) item.time = value;
+        });
+        saveState();
+      }
+
+      function toggleEntry(id) {
+        const entry = state.entries.find((item) => item.id === id);
+        if (!entry) return;
+        entry.status = entry.status === "taken" ? "planned" : "taken";
+        saveState();
+        render();
+      }
+
+      function toggleEntryGroup(ids) {
+        const entries = ids
+          .map((id) => state.entries.find((item) => item.id === id))
+          .filter(Boolean);
+        const shouldMarkTaken = entries.some((entry) => entry.status !== "taken");
+        entries.forEach((entry) => {
+          entry.status = shouldMarkTaken ? "taken" : "planned";
+        });
+        saveState();
+        render();
+      }
+
+      function deleteEntry(id) {
+        state.entries = state.entries.filter((item) => item.id !== id);
+        saveState();
+        render();
+        toast("Rad borttagen");
+      }
+
+      function deleteTemplateItem(id) {
+        state.template = state.template.filter((item) => item.id !== id);
+        saveState();
+        render();
+        toast("Mallrad borttagen");
+      }
+
+      function entriesForDate(date) {
+        return state.entries
+          .filter((entry) => entry.date === date)
+          .sort((a, b) => a.time.localeCompare(b.time) || (a.order ?? 0) - (b.order ?? 0));
+      }
+
+      function templateItems() {
+        return state.template
+          .slice()
+          .sort((a, b) => a.time.localeCompare(b.time) || (a.order ?? 0) - (b.order ?? 0));
+      }
+
+      function groupByTime(entries) {
+        const groups = new Map();
+        entries.forEach((entry) => {
+          if (!groups.has(entry.time)) groups.set(entry.time, []);
+          groups.get(entry.time).push(entry);
+        });
+        return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+      }
+
+      function setView(view) {
+        document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === view));
+        document.querySelectorAll(".view").forEach((panel) => panel.classList.toggle("active", panel.id === `${view}View`));
+      }
+
+      function shiftDay(amount) {
+        const date = new Date(`${els.selectedDate.value}T12:00:00`);
+        date.setDate(date.getDate() + amount);
+        els.selectedDate.value = toDateKey(date);
+        render();
+      }
+
+      function exportData() {
+        const payload = JSON.stringify({ exportedAt: new Date().toISOString(), ...state }, null, 2);
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `medicinlogg-${todayKey()}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+
+      function importData(event) {
+        const [file] = event.target.files;
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const imported = JSON.parse(reader.result);
+            if (!Array.isArray(imported.template) || !Array.isArray(imported.entries)) throw new Error("Fel format");
+            state.template = imported.template;
+            state.entries = imported.entries;
+            saveState();
+            render();
+            toast("Data importerad");
+          } catch (error) {
+            toast("Kunde inte importera filen");
+          } finally {
+            event.target.value = "";
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      function registerServiceWorker() {
+        if (!("serviceWorker" in navigator)) return;
+        navigator.serviceWorker.register("./sw.js").catch(() => {});
+      }
+
+      function todayKey() {
+        return toDateKey(new Date());
+      }
+
+      function toDateKey(date) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      }
+
+      function currentTime() {
+        const now = new Date();
+        return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+      }
+
+      function formatDate(dateKey) {
+        return new Date(`${dateKey}T12:00:00`).toLocaleDateString("sv-SE", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
+      }
+
+      function getWeekNumber(date) {
+        const copy = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        copy.setUTCDate(copy.getUTCDate() + 4 - (copy.getUTCDay() || 7));
+        const yearStart = new Date(Date.UTC(copy.getUTCFullYear(), 0, 1));
+        return Math.ceil(((copy - yearStart) / 86400000 + 1) / 7);
+      }
+
+      function statusLabel(status) {
+        return {
+          planned: "Planerad",
+          taken: "Tagen",
+          skipped: "Hoppad över",
+        }[status] || status;
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function escapeAttr(value) {
+        return escapeHtml(value).replaceAll("\n", " ");
+      }
+
+      function toast(message) {
+        els.toast.textContent = message;
+        els.toast.classList.add("show");
+        clearTimeout(toast.timer);
+        toast.timer = setTimeout(() => els.toast.classList.remove("show"), 1800);
+      }
+    </script>
+  </body>
+</html>
