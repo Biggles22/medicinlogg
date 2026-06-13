@@ -491,6 +491,45 @@
         opacity: 1;
       }
 
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+        background: rgba(17, 24, 23, 0.45);
+      }
+
+      .modal {
+        width: min(720px, 100%);
+        max-height: min(780px, 92vh);
+        display: grid;
+        gap: 12px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 16px;
+        box-shadow: var(--shadow);
+      }
+
+      .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .modal-header h3 {
+        margin: 0;
+      }
+
+      .export-text {
+        min-height: 320px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        font-size: 0.82rem;
+      }
+
       .hidden {
         display: none !important;
       }
@@ -707,6 +746,20 @@
       </main>
     </div>
 
+    <div class="modal-backdrop hidden" id="exportModal" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="exportTitle">Exportera data</h3>
+          <button class="btn small" id="closeExportBtn" type="button">Stäng</button>
+        </div>
+        <textarea class="export-text" id="exportText" readonly></textarea>
+        <div class="toolbar">
+          <a class="btn primary" id="downloadExportLink" download="medicinlogg.json" href="#">Ladda ner JSON</a>
+          <button class="btn" id="copyExportBtn" type="button">Kopiera</button>
+        </div>
+      </div>
+    </div>
+
     <datalist id="medicineOptions"></datalist>
     <datalist id="doseOptions"></datalist>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -741,6 +794,9 @@
         templateList: document.querySelector("#templateList"),
         historyList: document.querySelector("#historyList"),
         dayNotice: document.querySelector("#dayNotice"),
+        exportModal: document.querySelector("#exportModal"),
+        exportText: document.querySelector("#exportText"),
+        downloadExportLink: document.querySelector("#downloadExportLink"),
         medicineOptions: document.querySelector("#medicineOptions"),
         doseOptions: document.querySelector("#doseOptions"),
         toast: document.querySelector("#toast"),
@@ -767,6 +823,8 @@
         render();
       });
       document.querySelector("#exportBtn").addEventListener("click", exportData);
+      document.querySelector("#closeExportBtn").addEventListener("click", closeExport);
+      document.querySelector("#copyExportBtn").addEventListener("click", copyExport);
       els.importInput.addEventListener("change", importData);
       els.selectedDate.addEventListener("change", render);
 
@@ -1229,13 +1287,31 @@
 
       function exportData() {
         const payload = JSON.stringify({ exportedAt: new Date().toISOString(), ...state }, null, 2);
+        const fileName = `medicinlogg-${todayKey()}.json`;
         const blob = new Blob([payload], { type: "application/json" });
         const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `medicinlogg-${todayKey()}.json`;
-        link.click();
-        URL.revokeObjectURL(url);
+        if (exportData.url) URL.revokeObjectURL(exportData.url);
+        exportData.url = url;
+        els.exportText.value = payload;
+        els.downloadExportLink.href = url;
+        els.downloadExportLink.download = fileName;
+        els.exportModal.classList.remove("hidden");
+        toast("Exporten är klar");
+      }
+
+      function closeExport() {
+        els.exportModal.classList.add("hidden");
+      }
+
+      async function copyExport() {
+        els.exportText.select();
+        try {
+          await navigator.clipboard.writeText(els.exportText.value);
+          toast("Exporten kopierad");
+        } catch (error) {
+          document.execCommand("copy");
+          toast("Exporten markerad/kopierad");
+        }
       }
 
       function importData(event) {
