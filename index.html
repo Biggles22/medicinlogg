@@ -2154,7 +2154,10 @@
           refreshedByServiceWorker = true;
           window.location.reload();
         });
-        navigator.serviceWorker.register("./sw.js").then((registration) => registration.update()).catch(() => {});
+        navigator.serviceWorker
+          .register("./sw.js?v=10", { updateViaCache: "none" })
+          .then((registration) => registration.update())
+          .catch(() => {});
       }
 
       function todayKey() {

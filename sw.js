@@ -1,5 +1,5 @@
-const cacheName = "medicinlogg-v9";
-const filesToCache = ["./index.html", "./manifest.webmanifest", "./icon.svg"];
+const cacheName = "medicinlogg-v10";
+const filesToCache = ["./manifest.webmanifest", "./icon.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(cacheName).then((cache) => cache.addAll(filesToCache)));
@@ -27,9 +27,7 @@ self.addEventListener("fetch", (event) => {
     requestUrl.pathname.endsWith("/index.html");
 
   if (isAppPage) {
-    event.respondWith(
-      fetch(event.request, { cache: "no-store" }).catch(() => caches.match("./index.html"))
-    );
+    event.respondWith(fetch(event.request, { cache: "reload" }));
     return;
   }
 
