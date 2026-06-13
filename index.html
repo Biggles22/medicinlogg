@@ -37,6 +37,7 @@
 
       html {
         background: var(--bg);
+        -webkit-text-size-adjust: 100%;
       }
 
       body {
@@ -136,6 +137,7 @@
         display: grid;
         gap: 12px;
         align-content: start;
+        min-width: 0;
       }
 
       .topbar {
@@ -238,7 +240,7 @@
       }
 
       .btn {
-        min-height: 40px;
+        min-height: 44px;
         border-radius: 8px;
         padding: 0 13px;
         display: inline-flex;
@@ -267,7 +269,7 @@
       }
 
       .btn.small {
-        min-height: 34px;
+        min-height: 38px;
         padding: 0 10px;
       }
 
@@ -279,14 +281,18 @@
 
       .schedule-list,
       .template-list,
-      .history-list {
+      .history-list,
+      .interval-list,
+      .observation-list {
         display: grid;
         gap: 8px;
       }
 
       .slot,
       .template-item,
-      .history-row {
+      .history-row,
+      .interval-row,
+      .observation-row {
         border: 1px solid var(--line);
         border-radius: 8px;
         background: #fff;
@@ -370,6 +376,77 @@
         padding: 13px;
       }
 
+      .interval-summary {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .interval-stat {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface-2);
+        padding: 10px;
+      }
+
+      .interval-stat span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 760;
+      }
+
+      .interval-stat strong {
+        display: block;
+        margin-top: 3px;
+        font-size: 1.15rem;
+      }
+
+      .interval-row {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 10px;
+        align-items: center;
+        padding: 11px 12px;
+      }
+
+      .observation-form,
+      .observation-row {
+        display: grid;
+        grid-template-columns: 110px minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: end;
+      }
+
+      .observation-row {
+        align-items: center;
+        padding: 11px 12px;
+      }
+
+      .observation-row strong {
+        display: block;
+      }
+
+      .observation-list {
+        margin-top: 10px;
+      }
+
+      .interval-row strong {
+        display: block;
+      }
+
+      .interval-row span,
+      .observation-row span {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .delta {
+        min-width: 76px;
+        text-align: center;
+      }
+
       label {
         display: grid;
         gap: 3px;
@@ -382,7 +459,7 @@
       select,
       textarea {
         width: 100%;
-        min-height: 34px;
+        min-height: 40px;
         border: 1px solid var(--line);
         border-radius: 8px;
         background: #fff;
@@ -491,45 +568,6 @@
         opacity: 1;
       }
 
-      .modal-backdrop {
-        position: fixed;
-        inset: 0;
-        z-index: 20;
-        display: grid;
-        place-items: center;
-        padding: 18px;
-        background: rgba(17, 24, 23, 0.45);
-      }
-
-      .modal {
-        width: min(720px, 100%);
-        max-height: min(780px, 92vh);
-        display: grid;
-        gap: 12px;
-        background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        padding: 16px;
-        box-shadow: var(--shadow);
-      }
-
-      .modal-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .modal-header h3 {
-        margin: 0;
-      }
-
-      .export-text {
-        min-height: 320px;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-        font-size: 0.82rem;
-      }
-
       .hidden {
         display: none !important;
       }
@@ -541,10 +579,23 @@
 
         aside {
           padding: 18px;
+          gap: 14px;
+        }
+
+        .brand {
+          justify-content: center;
+        }
+
+        .brand p {
+          display: none;
         }
 
         .stats {
           grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .interval-summary {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
         .side-actions {
@@ -566,8 +617,43 @@
       }
 
       @media (max-width: 640px) {
+        body {
+          font-size: 16px;
+        }
+
+        .app {
+          display: block;
+        }
+
+        aside {
+          padding: max(12px, env(safe-area-inset-top)) 12px 12px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .brand {
+          justify-content: start;
+        }
+
+        .brand-mark {
+          width: 38px;
+          height: 38px;
+        }
+
+        .brand h1 {
+          font-size: 1.1rem;
+        }
+
+        .stat {
+          padding: 10px;
+        }
+
+        .stat strong {
+          font-size: 1.2rem;
+        }
+
         main {
-          padding: 14px;
+          padding: 12px 10px max(22px, env(safe-area-inset-bottom));
+          gap: 10px;
         }
 
         .topbar,
@@ -576,25 +662,125 @@
           flex-direction: column;
         }
 
+        h2 {
+          font-size: 1.15rem;
+          line-height: 1.25;
+        }
+
+        .topbar {
+          gap: 8px;
+        }
+
         .date-control,
         .tabs {
           width: 100%;
         }
 
+        .date-control {
+          gap: 6px;
+          padding: 6px;
+        }
+
+        .date-control input {
+          min-width: 0;
+          text-align: center;
+        }
+
+        .date-control .btn {
+          flex: 0 0 44px;
+          padding: 0;
+        }
+
+        .tabs {
+          position: sticky;
+          top: 0;
+          z-index: 5;
+          box-shadow: 0 8px 18px rgba(17, 24, 23, 0.14);
+        }
+
         .tab {
           flex: 1;
-          padding: 0 8px;
+          min-width: 0;
+          min-height: 46px;
+          padding: 0 6px;
+          font-size: 0.9rem;
         }
 
         .stats,
-        .side-actions,
-        .form-grid {
+        .form-grid,
+        .interval-summary {
           grid-template-columns: 1fr;
         }
 
-        .dose-row,
-        .template-item {
+        .stats {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .side-actions {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .side-actions {
+          gap: 8px;
+        }
+
+        .panel {
+          box-shadow: 0 8px 20px rgba(17, 24, 23, 0.08);
+        }
+
+        .panel-header,
+        .panel-body {
+          padding: 10px;
+        }
+
+        .toolbar,
+        .panel-header .toolbar {
+          display: grid;
           grid-template-columns: 1fr;
+          width: 100%;
+        }
+
+        .toolbar .btn,
+        .side-actions .btn,
+        .panel-header > .btn {
+          width: 100%;
+        }
+
+        .slot-head {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .slot-main {
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .slot-time {
+          flex: 1;
+        }
+
+        .slot-time label {
+          width: 100%;
+        }
+
+        .slot-time input {
+          width: 100%;
+        }
+
+        .check {
+          width: 42px;
+          height: 42px;
+        }
+
+        .dose-row,
+        .template-item,
+        .interval-row,
+        .observation-form,
+        .observation-row {
+          grid-template-columns: 1fr;
+          gap: 9px;
+          padding: 10px;
         }
 
         .dose-row .check {
@@ -604,7 +790,38 @@
         .template-item .toolbar,
         .dose-row .toolbar {
           grid-column: auto;
-          justify-content: flex-end;
+          justify-content: stretch;
+        }
+
+        .template-item > div:first-child {
+          display: none;
+        }
+
+        .history-row {
+          grid-template-columns: auto minmax(0, 1fr);
+          gap: 10px;
+        }
+
+        .history-row .pill {
+          grid-column: 1 / -1;
+          width: fit-content;
+          justify-self: end;
+        }
+
+        .interval-row .pill,
+        .delta {
+          width: fit-content;
+          min-width: 0;
+        }
+
+        .observation-form .btn {
+          width: 100%;
+        }
+
+        .toast {
+          right: 10px;
+          left: 10px;
+          text-align: center;
         }
       }
     </style>
@@ -681,7 +898,7 @@
 
         <div class="tabs" role="tablist" aria-label="Vyer">
           <button class="tab active" data-view="today" type="button">Dag</button>
-          <button class="tab" data-view="template" type="button">Admin</button>
+          <button class="tab" data-view="template" type="button">Standarddag</button>
           <button class="tab" data-view="history" type="button">Historik</button>
         </div>
 
@@ -709,24 +926,54 @@
               <div class="schedule-list" id="scheduleList"></div>
             </div>
           </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h3>Mellanrum under dagen</h3>
+              <span class="pill">Mål 3 tim</span>
+            </div>
+            <div class="panel-body">
+              <div id="intervalSummary"></div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h3>Kommentarer under dagen</h3>
+              <button class="btn small" id="addObservationBtn" type="button">Spara kommentar</button>
+            </div>
+            <div class="panel-body">
+              <div class="observation-form">
+                <label>
+                  Tid
+                  <input id="observationTime" type="time" />
+                </label>
+                <label>
+                  Kommentar
+                  <input id="observationText" type="text" placeholder="T.ex. biverkning, stelhet, illamående, trötthet" />
+                </label>
+                <button class="btn primary" id="quickObservationBtn" type="button">Nu</button>
+              </div>
+              <div class="observation-list" id="observationList"></div>
+            </div>
+          </section>
         </section>
 
         <section class="view" id="templateView">
           <section class="panel">
             <div class="panel-header">
-              <h3>Admin: standarddag</h3>
+              <h3>Standarddag</h3>
               <div class="toolbar">
                 <button class="btn" id="addTemplateBtn" type="button">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 5v14" /><path d="M5 12h14" />
                   </svg>
-                  Nytt tillfälle
+                  Ny medicinrad
                 </button>
                 <button class="btn danger" id="resetTemplateBtn" type="button">Återställ mall</button>
               </div>
             </div>
             <div class="panel-body">
-              <div class="notice">Här ändrar du standarddagen. Medicin och dos är fria textfält här, så nya värden blir sedan valbara i dropdown-menyerna på dagssidan.</div>
               <div class="template-list" id="templateList"></div>
             </div>
           </section>
@@ -744,20 +991,6 @@
           </section>
         </section>
       </main>
-    </div>
-
-    <div class="modal-backdrop hidden" id="exportModal" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
-      <div class="modal">
-        <div class="modal-header">
-          <h3 id="exportTitle">Exportera data</h3>
-          <button class="btn small" id="closeExportBtn" type="button">Stäng</button>
-        </div>
-        <textarea class="export-text" id="exportText" readonly></textarea>
-        <div class="toolbar">
-          <a class="btn primary" id="downloadExportLink" download="medicinlogg.json" href="#">Ladda ner JSON</a>
-          <button class="btn" id="copyExportBtn" type="button">Kopiera</button>
-        </div>
-      </div>
     </div>
 
     <datalist id="medicineOptions"></datalist>
@@ -791,12 +1024,13 @@
         dateTitle: document.querySelector("#dateTitle"),
         selectedDate: document.querySelector("#selectedDate"),
         scheduleList: document.querySelector("#scheduleList"),
+        intervalSummary: document.querySelector("#intervalSummary"),
+        observationTime: document.querySelector("#observationTime"),
+        observationText: document.querySelector("#observationText"),
+        observationList: document.querySelector("#observationList"),
         templateList: document.querySelector("#templateList"),
         historyList: document.querySelector("#historyList"),
         dayNotice: document.querySelector("#dayNotice"),
-        exportModal: document.querySelector("#exportModal"),
-        exportText: document.querySelector("#exportText"),
-        downloadExportLink: document.querySelector("#downloadExportLink"),
         medicineOptions: document.querySelector("#medicineOptions"),
         doseOptions: document.querySelector("#doseOptions"),
         toast: document.querySelector("#toast"),
@@ -815,6 +1049,8 @@
       document.querySelector("#nextDay").addEventListener("click", () => shiftDay(1));
       document.querySelector("#createDayBtn").addEventListener("click", createDayFromTemplate);
       document.querySelector("#addDoseBtn").addEventListener("click", addDoseToDay);
+      document.querySelector("#addObservationBtn").addEventListener("click", addObservation);
+      document.querySelector("#quickObservationBtn").addEventListener("click", addObservationNow);
       document.querySelector("#addTemplateBtn").addEventListener("click", addTemplateItem);
       document.querySelector("#resetTemplateBtn").addEventListener("click", resetTemplate);
       document.querySelector("#goTodayBtn").addEventListener("click", () => {
@@ -823,8 +1059,6 @@
         render();
       });
       document.querySelector("#exportBtn").addEventListener("click", exportData);
-      document.querySelector("#closeExportBtn").addEventListener("click", closeExport);
-      document.querySelector("#copyExportBtn").addEventListener("click", copyExport);
       els.importInput.addEventListener("change", importData);
       els.selectedDate.addEventListener("change", render);
 
@@ -832,7 +1066,7 @@
         try {
           const parsed = JSON.parse(localStorage.getItem(storageKey));
           if (parsed && Array.isArray(parsed.template) && Array.isArray(parsed.entries)) {
-            return parsed;
+            return { ...parsed, observations: Array.isArray(parsed.observations) ? parsed.observations : [] };
           }
         } catch (error) {}
 
@@ -841,6 +1075,7 @@
           if (old && Array.isArray(old.entries)) {
             return {
               template: withIds(defaultTemplate),
+              observations: [],
               entries: old.entries.map((entry) => ({
                 id: crypto.randomUUID(),
                 date: entry.date,
@@ -855,7 +1090,7 @@
           }
         } catch (error) {}
 
-        return { template: withIds(defaultTemplate), entries: [] };
+        return { template: withIds(defaultTemplate), entries: [], observations: [] };
       }
 
       function withIds(items) {
@@ -870,6 +1105,7 @@
         renderOptionLists();
         renderTitle();
         renderDay();
+        renderObservations();
         renderTemplate();
         renderHistory();
         renderStats();
@@ -915,6 +1151,7 @@
         const entries = entriesForDate(els.selectedDate.value);
         els.dayNotice.classList.toggle("hidden", entries.length > 0);
         els.scheduleList.innerHTML = "";
+        renderDoseIntervals(entries);
 
         if (!entries.length) {
           els.scheduleList.innerHTML = `<div class="empty">Ingen standarddag skapad för vald dag ännu.</div>`;
@@ -980,6 +1217,114 @@
         });
       }
 
+      function renderDoseIntervals(entries) {
+        const analysis = buildDoseIntervalAnalysis(entries);
+        const { takenSlots, intervals } = analysis;
+
+        if (takenSlots.length < 2) {
+          els.intervalSummary.innerHTML = `<div class="empty">Minst två tagna tillfällen behövs för att visa mellanrum.</div>`;
+          return;
+        }
+
+        els.intervalSummary.innerHTML = `
+          <div class="interval-summary">
+            ${intervalStat("Tillfällen", takenSlots.length)}
+            ${intervalStat("Snitt", formatDuration(analysis.average))}
+            ${intervalStat("Kortast", formatDuration(analysis.shortest))}
+            ${intervalStat("Längst", formatDuration(analysis.longest))}
+          </div>
+          <div class="notice">Största avvikelse: ${formatDelta(analysis.largestDelta.delta)} (${escapeHtml(analysis.largestDelta.previous.time)} till ${escapeHtml(analysis.largestDelta.current.time)})</div>
+          <div class="interval-list">
+            ${intervals.map((interval) => intervalRow(interval)).join("")}
+          </div>
+        `;
+      }
+
+      function buildDoseIntervalAnalysis(entries) {
+        const targetMinutes = 180;
+        const takenSlots = groupByTime(entries)
+          .filter(([, items]) => items.some((item) => item.status === "taken"))
+          .map(([time, items]) => ({
+            time,
+            minutes: timeToMinutes(time),
+            medicines: items.filter((item) => item.status === "taken").map((item) => item.medicine),
+          }))
+          .filter((slot) => Number.isFinite(slot.minutes))
+          .sort((a, b) => a.minutes - b.minutes);
+        const intervals = takenSlots.slice(1).map((slot, index) => {
+          const previous = takenSlots[index];
+          const minutes = slot.minutes - previous.minutes;
+          const delta = minutes - targetMinutes;
+          return { previous, current: slot, minutes, delta };
+        });
+        const average = intervals.length ? Math.round(intervals.reduce((sum, interval) => sum + interval.minutes, 0) / intervals.length) : 0;
+        const shortest = intervals.length ? Math.min(...intervals.map((interval) => interval.minutes)) : 0;
+        const longest = intervals.length ? Math.max(...intervals.map((interval) => interval.minutes)) : 0;
+        const largestDelta = intervals.reduce((largest, interval) =>
+          Math.abs(interval.delta) > Math.abs(largest.delta) ? interval : largest
+        , { delta: 0, previous: { time: "" }, current: { time: "" } });
+        return { targetMinutes, takenSlots, intervals, average, shortest, longest, largestDelta };
+      }
+
+      function intervalStat(label, value) {
+        return `
+          <div class="interval-stat">
+            <span>${label}</span>
+            <strong>${value}</strong>
+          </div>
+        `;
+      }
+
+      function intervalRow(interval) {
+        const deltaClass = Math.abs(interval.delta) <= 15 ? "done" : "";
+        return `
+          <article class="interval-row">
+            <div>
+              <strong>${escapeHtml(interval.previous.time)} till ${escapeHtml(interval.current.time)}</strong>
+              <span>${escapeHtml(uniqueList(interval.current.medicines).join(", ") || "Medicin")}</span>
+            </div>
+            <span>${formatDuration(interval.minutes)}</span>
+            <span class="pill delta ${deltaClass}">${formatDelta(interval.delta)}</span>
+          </article>
+        `;
+      }
+
+      function renderObservations() {
+        const observations = observationsForDate(els.selectedDate.value);
+        if (!els.observationTime.value) els.observationTime.value = currentTime();
+        els.observationList.innerHTML = "";
+
+        if (!observations.length) {
+          els.observationList.innerHTML = `<div class="empty">Inga kommentarer för vald dag ännu.</div>`;
+          return;
+        }
+
+        observations.forEach((observation) => {
+          const row = document.createElement("article");
+          row.className = "observation-row";
+          row.innerHTML = `
+            <label>
+              Tid
+              <input data-observation-id="${observation.id}" data-observation-field="time" type="time" value="${escapeAttr(observation.time)}" />
+            </label>
+            <label>
+              Kommentar
+              <input data-observation-id="${observation.id}" data-observation-field="text" type="text" value="${escapeAttr(observation.text)}" />
+            </label>
+            <button class="btn small danger" type="button" title="Ta bort kommentar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" />
+              </svg>
+            </button>
+          `;
+          row.querySelector(".danger").addEventListener("click", () => deleteObservation(observation.id));
+          row.querySelectorAll("[data-observation-field]").forEach((input) => {
+            input.addEventListener("change", () => updateObservation(input.dataset.observationId, input.dataset.observationField, input.value));
+          });
+          els.observationList.append(row);
+        });
+      }
+
       function renderTemplate() {
         els.templateList.innerHTML = "";
         groupByTime(templateItems()).forEach(([time, items]) => {
@@ -994,25 +1339,21 @@
                   <input id="${slotId}" class="template-time-input" type="time" value="${escapeAttr(time)}" />
                 </label>
               </div>
-              <div class="toolbar">
-                <span class="pill">${items.length} medicin${items.length === 1 ? "" : "er"}</span>
-                <button class="btn small" type="button" data-add-template-time="${escapeAttr(time)}">Lägg till medicin</button>
-              </div>
+              <span class="pill">${items.length} medicin${items.length === 1 ? "" : "er"}</span>
             </div>
           `;
 
           slot.querySelector(".template-time-input").addEventListener("change", (event) => {
             updateTemplateGroupTime(items.map((item) => item.id), event.target.value);
           });
-          slot.querySelector("[data-add-template-time]").addEventListener("click", () => addTemplateItem(time));
 
           items.forEach((item) => {
             const row = document.createElement("article");
             row.className = "template-item";
             row.innerHTML = `
               <div></div>
-              ${templateTextField("Medicin", item.medicine, item.id, "medicine")}
-              ${templateTextField("Dos", item.dose, item.id, "dose")}
+              ${templateField("Medicin", "text", item.medicine, item.id, "medicine")}
+              ${templateField("Dos", "text", item.dose, item.id, "dose")}
               ${templateField("Anteckning", "text", item.note, item.id, "note")}
               <div class="toolbar">
                 <button class="btn small danger" type="button" title="Ta bort från mall">
@@ -1094,15 +1435,6 @@
         `;
       }
 
-      function templateTextField(label, value, id, key) {
-        return `
-          <label>
-            ${label}
-            <input data-id="${id}" data-template-field="${key}" type="text" value="${escapeAttr(value)}" />
-          </label>
-        `;
-      }
-
       function selectField(label, value, id, key, isTemplate) {
         const values = optionValues(key);
         if (value && !values.includes(value)) values.push(value);
@@ -1163,10 +1495,35 @@
         toast("Ny rad tillagd");
       }
 
-      function addTemplateItem(time = "08:00") {
+      function addObservation() {
+        const text = els.observationText.value.trim();
+        if (!text) {
+          toast("Skriv en kommentar först");
+          return;
+        }
+        state.observations.push({
+          id: crypto.randomUUID(),
+          date: els.selectedDate.value,
+          time: els.observationTime.value || currentTime(),
+          text,
+          createdAt: new Date().toISOString(),
+        });
+        els.observationText.value = "";
+        els.observationTime.value = currentTime();
+        saveState();
+        render();
+        toast("Kommentar sparad");
+      }
+
+      function addObservationNow() {
+        els.observationTime.value = currentTime();
+        addObservation();
+      }
+
+      function addTemplateItem() {
         state.template.push({
           id: crypto.randomUUID(),
-          time,
+          time: "08:00",
           medicine: "Ny medicin",
           dose: "",
           note: "",
@@ -1206,7 +1563,6 @@
         if (!item) return;
         item[key] = value.trim ? value.trim() : value;
         saveState();
-        renderOptionLists();
         if (shouldRender) render();
       }
 
@@ -1216,6 +1572,14 @@
           if (item) item.time = value;
         });
         saveState();
+      }
+
+      function updateObservation(id, key, value) {
+        const observation = state.observations.find((item) => item.id === id);
+        if (!observation) return;
+        observation[key] = value.trim ? value.trim() : value;
+        saveState();
+        render();
       }
 
       function toggleEntry(id) {
@@ -1252,6 +1616,13 @@
         toast("Mallrad borttagen");
       }
 
+      function deleteObservation(id) {
+        state.observations = state.observations.filter((item) => item.id !== id);
+        saveState();
+        render();
+        toast("Kommentar borttagen");
+      }
+
       function entriesForDate(date) {
         return state.entries
           .filter((entry) => entry.date === date)
@@ -1262,6 +1633,12 @@
         return state.template
           .slice()
           .sort((a, b) => a.time.localeCompare(b.time) || (a.order ?? 0) - (b.order ?? 0));
+      }
+
+      function observationsForDate(date) {
+        return state.observations
+          .filter((observation) => observation.date === date)
+          .sort((a, b) => a.time.localeCompare(b.time) || (a.createdAt || "").localeCompare(b.createdAt || ""));
       }
 
       function groupByTime(entries) {
@@ -1286,32 +1663,464 @@
       }
 
       function exportData() {
-        const payload = JSON.stringify({ exportedAt: new Date().toISOString(), ...state }, null, 2);
-        const fileName = `medicinlogg-${todayKey()}.json`;
-        const blob = new Blob([payload], { type: "application/json" });
+        const workbook = buildXlsxWorkbook();
+        const blob = new Blob([workbook], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
         const url = URL.createObjectURL(blob);
-        if (exportData.url) URL.revokeObjectURL(exportData.url);
-        exportData.url = url;
-        els.exportText.value = payload;
-        els.downloadExportLink.href = url;
-        els.downloadExportLink.download = fileName;
-        els.exportModal.classList.remove("hidden");
-        toast("Exporten är klar");
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `medicinlogg-${todayKey()}.xlsx`;
+        link.click();
+        URL.revokeObjectURL(url);
+        toast("Excel-fil exporterad");
       }
 
-      function closeExport() {
-        els.exportModal.classList.add("hidden");
+      function buildXlsxWorkbook() {
+        const generatedAt = new Date();
+        const historyEntries = state.entries
+          .slice()
+          .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+        const dailyRows = buildDailySummaryRows(historyEntries);
+        const intervalExportRows = buildIntervalExportRows(historyEntries);
+        const observationExportRows = buildObservationExportRows();
+        const overviewRows = [
+          xlsxTextRow(["Medicinlogg"], 2, 26),
+          xlsxTextRow([`Exporterad ${generatedAt.toLocaleString("sv-SE")}`], 3),
+          xlsxBlankRow(),
+          xlsxTextRow(["Datum", "Veckodag", "Vecka", "Planerade", "Tagna", "Hoppade över", "Följsamhet"], 4),
+          ...dailyRows.map((row) =>
+            xlsxRow([
+              xlsxText(row.date),
+              xlsxText(row.weekday),
+              xlsxNumber(row.week),
+              xlsxNumber(row.planned),
+              xlsxNumber(row.taken),
+              xlsxNumber(row.skipped),
+              xlsxText(`${row.percent}%`),
+            ])
+          ),
+        ];
+        const historyRows = [
+          xlsxTextRow(["Historik"], 2, 26),
+          xlsxTextRow([`${historyEntries.length} loggade rader`], 3),
+          xlsxBlankRow(),
+          xlsxTextRow(["Datum", "Veckodag", "Vecka", "Tid", "Medicin", "Dos", "Status", "Anteckning"], 4),
+          ...historyEntries.map((entry) => {
+            const date = new Date(`${entry.date}T12:00:00`);
+            const style = entry.status === "taken" ? 5 : entry.status === "skipped" ? 6 : 1;
+            return xlsxRow([
+              xlsxText(entry.date, style),
+              xlsxText(date.toLocaleDateString("sv-SE", { weekday: "long" }), style),
+              xlsxNumber(getWeekNumber(date), style),
+              xlsxText(entry.time, style),
+              xlsxText(entry.medicine, style),
+              xlsxText(entry.dose, style),
+              xlsxText(statusLabel(entry.status), style),
+              xlsxText(entry.note, style),
+            ]);
+          }),
+        ];
+        const intervalRows = [
+          xlsxTextRow(["Mellanrum"], 2, 26),
+          xlsxTextRow([`${intervalExportRows.length} uppmätta mellanrum`], 3),
+          xlsxBlankRow(),
+          xlsxTextRow(["Datum", "Från", "Till", "Mellanrum", "Avvikelse från 3 tim", "Tagna mediciner vid till", "Bedömning"], 4),
+          ...intervalExportRows.map((row) =>
+            xlsxRow([
+              xlsxText(row.date),
+              xlsxText(row.from),
+              xlsxText(row.to),
+              xlsxText(formatDuration(row.minutes)),
+              xlsxText(formatDelta(row.delta), Math.abs(row.delta) <= 15 ? 5 : 6),
+              xlsxText(row.medicines),
+              xlsxText(Math.abs(row.delta) <= 15 ? "Nära mål" : "Avvikelse"),
+            ])
+          ),
+        ];
+        const observationRows = [
+          xlsxTextRow(["Kommentarer"], 2, 26),
+          xlsxTextRow([`${observationExportRows.length} kommentarer`], 3),
+          xlsxBlankRow(),
+          xlsxTextRow(["Datum", "Tid", "Kommentar", "Senaste tagna tillfälle", "Tid sedan senaste", "Nästa tagna tillfälle", "Tid till nästa"], 4),
+          ...observationExportRows.map((row) =>
+            xlsxRow([
+              xlsxText(row.date),
+              xlsxText(row.time),
+              xlsxText(row.text),
+              xlsxText(row.previousTime),
+              xlsxText(row.minutesSincePrevious === "" ? "" : formatDuration(row.minutesSincePrevious)),
+              xlsxText(row.nextTime),
+              xlsxText(row.minutesUntilNext === "" ? "" : formatDuration(row.minutesUntilNext)),
+            ])
+          ),
+        ];
+        const templateRows = [
+          xlsxTextRow(["Standarddag"], 2, 26),
+          xlsxTextRow([`${state.template.length} rader i mallen`], 3),
+          xlsxBlankRow(),
+          xlsxTextRow(["Tid", "Medicin", "Dos", "Anteckning"], 4),
+          ...templateItems().map((item) =>
+            xlsxRow([
+              xlsxText(item.time),
+              xlsxText(item.medicine),
+              xlsxText(item.dose),
+              xlsxText(item.note),
+            ])
+          ),
+        ];
+
+        return createXlsxZip([
+          ["[Content_Types].xml", xlsxContentTypes()],
+          ["_rels/.rels", xlsxRootRelationships()],
+          ["docProps/core.xml", xlsxCoreProperties(generatedAt)],
+          ["docProps/app.xml", xlsxAppProperties()],
+          ["xl/workbook.xml", xlsxWorkbookXml()],
+          ["xl/_rels/workbook.xml.rels", xlsxWorkbookRelationships()],
+          ["xl/styles.xml", xlsxStylesXml()],
+          ["xl/worksheets/sheet1.xml", xlsxWorksheetXml([18, 18, 12, 12, 12, 15, 14], overviewRows)],
+          ["xl/worksheets/sheet2.xml", xlsxWorksheetXml([16, 14, 10, 11, 24, 16, 16, 38], historyRows)],
+          ["xl/worksheets/sheet3.xml", xlsxWorksheetXml([16, 11, 11, 16, 20, 34, 16], intervalRows)],
+          ["xl/worksheets/sheet4.xml", xlsxWorksheetXml([16, 11, 44, 20, 18, 20, 18], observationRows)],
+          ["xl/worksheets/sheet5.xml", xlsxWorksheetXml([12, 26, 18, 42], templateRows)],
+        ]);
       }
 
-      async function copyExport() {
-        els.exportText.select();
-        try {
-          await navigator.clipboard.writeText(els.exportText.value);
-          toast("Exporten kopierad");
-        } catch (error) {
-          document.execCommand("copy");
-          toast("Exporten markerad/kopierad");
+      function buildDailySummaryRows(entries) {
+        const dates = [...new Set(entries.map((entry) => entry.date))].sort((a, b) => a.localeCompare(b));
+        return dates.map((dateKey) => {
+          const dateEntries = entries.filter((entry) => entry.date === dateKey);
+          const planned = dateEntries.filter((entry) => entry.status !== "skipped").length;
+          const taken = dateEntries.filter((entry) => entry.status === "taken").length;
+          const skipped = dateEntries.filter((entry) => entry.status === "skipped").length;
+          const date = new Date(`${dateKey}T12:00:00`);
+          return {
+            date: dateKey,
+            weekday: date.toLocaleDateString("sv-SE", { weekday: "long" }),
+            week: getWeekNumber(date),
+            planned,
+            taken,
+            skipped,
+            percent: planned ? Math.round((taken / planned) * 100) : 0,
+          };
+        });
+      }
+
+      function buildIntervalExportRows(entries) {
+        const dates = [...new Set(entries.map((entry) => entry.date))].sort((a, b) => a.localeCompare(b));
+        return dates.flatMap((date) => {
+          const analysis = buildDoseIntervalAnalysis(entries.filter((entry) => entry.date === date));
+          return analysis.intervals.map((interval) => ({
+            date,
+            from: interval.previous.time,
+            to: interval.current.time,
+            minutes: interval.minutes,
+            delta: interval.delta,
+            medicines: uniqueList(interval.current.medicines).join(", "),
+          }));
+        });
+      }
+
+      function buildObservationExportRows() {
+        return state.observations
+          .slice()
+          .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))
+          .map((observation) => {
+            const slots = buildDoseIntervalAnalysis(entriesForDate(observation.date)).takenSlots;
+            const observationMinutes = timeToMinutes(observation.time);
+            const previousSlots = slots.filter((slot) => slot.minutes <= observationMinutes);
+            const previous = previousSlots[previousSlots.length - 1];
+            const next = slots.find((slot) => slot.minutes >= observationMinutes);
+            return {
+              date: observation.date,
+              time: observation.time,
+              text: observation.text,
+              previousTime: previous?.time || "",
+              minutesSincePrevious: previous ? observationMinutes - previous.minutes : "",
+              nextTime: next?.time || "",
+              minutesUntilNext: next ? next.minutes - observationMinutes : "",
+            };
+          });
+      }
+
+      function xlsxWorkbookXml() {
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets>
+    <sheet name="Översikt" sheetId="1" r:id="rId1"/>
+    <sheet name="Historik" sheetId="2" r:id="rId2"/>
+    <sheet name="Mellanrum" sheetId="3" r:id="rId3"/>
+    <sheet name="Kommentarer" sheetId="4" r:id="rId4"/>
+    <sheet name="Standarddag" sheetId="5" r:id="rId5"/>
+  </sheets>
+</workbook>`;
+      }
+
+      function xlsxWorksheetXml(widths, rows) {
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetViews>
+    <sheetView workbookViewId="0">
+      <pane ySplit="4" topLeftCell="A5" activePane="bottomLeft" state="frozen"/>
+    </sheetView>
+  </sheetViews>
+  <sheetFormatPr defaultRowHeight="15"/>
+  <cols>
+    ${widths.map((width, index) => `<col min="${index + 1}" max="${index + 1}" width="${width}" customWidth="1"/>`).join("\n    ")}
+  </cols>
+  <sheetData>
+    ${rows.map((row, index) => xlsxRowXml(row, index + 1)).join("\n    ")}
+  </sheetData>
+</worksheet>`;
+      }
+
+      function xlsxRowXml(row, rowIndex) {
+        const height = row.height ? ` ht="${row.height}" customHeight="1"` : "";
+        return `<row r="${rowIndex}"${height}>${row.cells.map((cell, index) => xlsxCellXml(cell, rowIndex, index + 1)).join("")}</row>`;
+      }
+
+      function xlsxCellXml(cell, rowIndex, columnIndex) {
+        if (!cell) return "";
+        const ref = `${xlsxColumnName(columnIndex)}${rowIndex}`;
+        const style = cell.style ? ` s="${cell.style}"` : "";
+        if (cell.type === "number") return `<c r="${ref}"${style}><v>${cell.value}</v></c>`;
+        return `<c r="${ref}"${style} t="inlineStr"><is><t>${escapeXml(cell.value ?? "")}</t></is></c>`;
+      }
+
+      function xlsxTextRow(values, style = 1, height = 0) {
+        return { height, cells: values.map((value) => xlsxText(value, style)) };
+      }
+
+      function xlsxBlankRow() {
+        return { cells: [] };
+      }
+
+      function xlsxRow(cells) {
+        return { cells };
+      }
+
+      function xlsxText(value, style = 1) {
+        return { value, style, type: "text" };
+      }
+
+      function xlsxNumber(value, style = 1) {
+        return { value: Number.isFinite(value) ? value : 0, style, type: "number" };
+      }
+
+      function xlsxColumnName(index) {
+        let name = "";
+        while (index > 0) {
+          const remainder = (index - 1) % 26;
+          name = String.fromCharCode(65 + remainder) + name;
+          index = Math.floor((index - 1) / 26);
         }
+        return name;
+      }
+
+      function xlsxContentTypes() {
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
+  <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/worksheets/sheet4.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/worksheets/sheet5.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+</Types>`;
+      }
+
+      function xlsxRootRelationships() {
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
+</Relationships>`;
+      }
+
+      function xlsxWorkbookRelationships() {
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/>
+  <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet4.xml"/>
+  <Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet5.xml"/>
+  <Relationship Id="rId6" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`;
+      }
+
+      function xlsxCoreProperties(date) {
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <dc:title>Medicinlogg</dc:title>
+  <dc:creator>Medicinlogg</dc:creator>
+  <cp:lastModifiedBy>Medicinlogg</cp:lastModifiedBy>
+  <dcterms:created xsi:type="dcterms:W3CDTF">${date.toISOString()}</dcterms:created>
+  <dcterms:modified xsi:type="dcterms:W3CDTF">${date.toISOString()}</dcterms:modified>
+</cp:coreProperties>`;
+      }
+
+      function xlsxAppProperties() {
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+  <Application>Medicinlogg</Application>
+</Properties>`;
+      }
+
+      function xlsxStylesXml() {
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <fonts count="5">
+    <font><sz val="11"/><color rgb="FF111817"/><name val="Aptos"/></font>
+    <font><b/><sz val="18"/><color rgb="FF0B5F59"/><name val="Aptos Display"/></font>
+    <font><sz val="10"/><color rgb="FF61706D"/><name val="Aptos"/></font>
+    <font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Aptos"/></font>
+    <font><sz val="11"/><color rgb="FF14532D"/><name val="Aptos"/></font>
+  </fonts>
+  <fills count="6">
+    <fill><patternFill patternType="none"/></fill>
+    <fill><patternFill patternType="gray125"/></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFFFFFFF"/><bgColor indexed="64"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FF0F766E"/><bgColor indexed="64"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFDCFCE7"/><bgColor indexed="64"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFFEE2E2"/><bgColor indexed="64"/></patternFill></fill>
+  </fills>
+  <borders count="2">
+    <border><left/><right/><top/><bottom/><diagonal/></border>
+    <border><left/><right/><top/><bottom style="thin"><color rgb="FFD7E2DD"/></bottom><diagonal/></border>
+  </borders>
+  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+  <cellXfs count="7">
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+    <xf numFmtId="0" fontId="0" fillId="2" borderId="1" xfId="0" applyFill="1" applyBorder="1"><alignment vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment vertical="center"/></xf>
+    <xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment vertical="center"/></xf>
+    <xf numFmtId="0" fontId="3" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="4" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="5" borderId="1" xfId="0" applyFill="1" applyBorder="1"><alignment vertical="center" wrapText="1"/></xf>
+  </cellXfs>
+  <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+  <dxfs count="0"/>
+  <tableStyles count="0" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleLight16"/>
+</styleSheet>`;
+      }
+
+      function createXlsxZip(files) {
+        const encoder = new TextEncoder();
+        const fileParts = files.map(([name, content]) => ({
+          name,
+          nameBytes: encoder.encode(name),
+          data: encoder.encode(content),
+        }));
+        const chunks = [];
+        const centralDirectory = [];
+        let offset = 0;
+
+        fileParts.forEach((file) => {
+          const crc = crc32(file.data);
+          const localHeader = new Uint8Array(30 + file.nameBytes.length);
+          writeZipHeader(localHeader, 0x04034b50, 20, 0, 0x0800, 0, 0, 0, crc, file.data.length, file.data.length, file.nameBytes.length, 0);
+          localHeader.set(file.nameBytes, 30);
+          chunks.push(localHeader, file.data);
+
+          const centralHeader = new Uint8Array(46 + file.nameBytes.length);
+          writeZipHeader(centralHeader, 0x02014b50, 20, 20, 0x0800, 0, 0, 0, crc, file.data.length, file.data.length, file.nameBytes.length, 0, 0, 0, 0, 0, offset);
+          centralHeader.set(file.nameBytes, 46);
+          centralDirectory.push(centralHeader);
+          offset += localHeader.length + file.data.length;
+        });
+
+        const centralOffset = offset;
+        const centralSize = centralDirectory.reduce((sum, chunk) => sum + chunk.length, 0);
+        const end = new Uint8Array(22);
+        writeZipEnd(end, fileParts.length, centralSize, centralOffset);
+        return concatUint8Arrays([...chunks, ...centralDirectory, end]);
+      }
+
+      function writeZipHeader(buffer, signature, versionMade, versionNeeded, flags, method, time, date, crc, compressedSize, size, nameLength, extraLength, commentLength = 0, diskStart = 0, internalAttrs = 0, externalAttrs = 0, localOffset = 0) {
+        const view = new DataView(buffer.buffer);
+        view.setUint32(0, signature, true);
+        if (signature === 0x04034b50) {
+          view.setUint16(4, versionMade, true);
+          view.setUint16(6, flags, true);
+          view.setUint16(8, method, true);
+          view.setUint16(10, time, true);
+          view.setUint16(12, date, true);
+          view.setUint32(14, crc, true);
+          view.setUint32(18, compressedSize, true);
+          view.setUint32(22, size, true);
+          view.setUint16(26, nameLength, true);
+          view.setUint16(28, extraLength, true);
+          return;
+        }
+        view.setUint16(4, versionMade, true);
+        view.setUint16(6, versionNeeded, true);
+        view.setUint16(8, flags, true);
+        view.setUint16(10, method, true);
+        view.setUint16(12, time, true);
+        view.setUint16(14, date, true);
+        view.setUint32(16, crc, true);
+        view.setUint32(20, compressedSize, true);
+        view.setUint32(24, size, true);
+        view.setUint16(28, nameLength, true);
+        view.setUint16(30, extraLength, true);
+        view.setUint16(32, commentLength, true);
+        view.setUint16(34, diskStart, true);
+        view.setUint16(36, internalAttrs, true);
+        view.setUint32(38, externalAttrs, true);
+        view.setUint32(42, localOffset, true);
+      }
+
+      function writeZipEnd(buffer, fileCount, centralSize, centralOffset) {
+        const view = new DataView(buffer.buffer);
+        view.setUint32(0, 0x06054b50, true);
+        view.setUint16(8, fileCount, true);
+        view.setUint16(10, fileCount, true);
+        view.setUint32(12, centralSize, true);
+        view.setUint32(16, centralOffset, true);
+      }
+
+      function concatUint8Arrays(parts) {
+        const totalLength = parts.reduce((sum, part) => sum + part.length, 0);
+        const result = new Uint8Array(totalLength);
+        let offset = 0;
+        parts.forEach((part) => {
+          result.set(part, offset);
+          offset += part.length;
+        });
+        return result;
+      }
+
+      function crc32(bytes) {
+        let crc = 0xffffffff;
+        const table = crc32.table || (crc32.table = buildCrc32Table());
+        bytes.forEach((byte) => {
+          crc = (crc >>> 8) ^ table[(crc ^ byte) & 0xff];
+        });
+        return (crc ^ 0xffffffff) >>> 0;
+      }
+
+      function buildCrc32Table() {
+        return Array.from({ length: 256 }, (_, index) => {
+          let value = index;
+          for (let bit = 0; bit < 8; bit += 1) {
+            value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
+          }
+          return value >>> 0;
+        });
+      }
+
+      function escapeXml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&apos;");
       }
 
       function importData(event) {
@@ -1324,6 +2133,7 @@
             if (!Array.isArray(imported.template) || !Array.isArray(imported.entries)) throw new Error("Fel format");
             state.template = imported.template;
             state.entries = imported.entries;
+            state.observations = Array.isArray(imported.observations) ? imported.observations : [];
             saveState();
             render();
             toast("Data importerad");
@@ -1338,7 +2148,16 @@
 
       function registerServiceWorker() {
         if (!("serviceWorker" in navigator)) return;
-        navigator.serviceWorker.register("./sw.js").catch(() => {});
+        let refreshedByServiceWorker = false;
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (refreshedByServiceWorker) return;
+          refreshedByServiceWorker = true;
+          window.location.reload();
+        });
+        navigator.serviceWorker
+          .register("./sw.js?v=10", { updateViaCache: "none" })
+          .then((registration) => registration.update())
+          .catch(() => {});
       }
 
       function todayKey() {
@@ -1352,6 +2171,31 @@
       function currentTime() {
         const now = new Date();
         return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+      }
+
+      function timeToMinutes(time) {
+        const [hours, minutes] = String(time).split(":").map(Number);
+        if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return NaN;
+        return hours * 60 + minutes;
+      }
+
+      function formatDuration(totalMinutes) {
+        const minutes = Math.max(0, Math.round(totalMinutes));
+        const hours = Math.floor(minutes / 60);
+        const rest = minutes % 60;
+        if (!hours) return `${rest} min`;
+        if (!rest) return `${hours} tim`;
+        return `${hours} tim ${rest} min`;
+      }
+
+      function formatDelta(minutes) {
+        if (minutes === 0) return "exakt";
+        const sign = minutes > 0 ? "+" : "-";
+        return `${sign}${formatDuration(Math.abs(minutes))}`;
+      }
+
+      function uniqueList(values) {
+        return [...new Set(values.filter(Boolean))];
       }
 
       function formatDate(dateKey) {
