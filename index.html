@@ -642,7 +642,7 @@
 
         <div class="tabs" role="tablist" aria-label="Vyer">
           <button class="tab active" data-view="today" type="button">Dag</button>
-          <button class="tab" data-view="template" type="button">Standarddag</button>
+          <button class="tab" data-view="template" type="button">Admin</button>
           <button class="tab" data-view="history" type="button">Historik</button>
         </div>
 
@@ -675,18 +675,19 @@
         <section class="view" id="templateView">
           <section class="panel">
             <div class="panel-header">
-              <h3>Standarddag</h3>
+              <h3>Admin: standarddag</h3>
               <div class="toolbar">
                 <button class="btn" id="addTemplateBtn" type="button">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 5v14" /><path d="M5 12h14" />
                   </svg>
-                  Ny medicinrad
+                  Nytt tillfälle
                 </button>
                 <button class="btn danger" id="resetTemplateBtn" type="button">Återställ mall</button>
               </div>
             </div>
             <div class="panel-body">
+              <div class="notice">Här ändrar du standarddagen. Medicin och dos är fria textfält här, så nya värden blir sedan valbara i dropdown-menyerna på dagssidan.</div>
               <div class="template-list" id="templateList"></div>
             </div>
           </section>
@@ -935,21 +936,25 @@
                   <input id="${slotId}" class="template-time-input" type="time" value="${escapeAttr(time)}" />
                 </label>
               </div>
-              <span class="pill">${items.length} medicin${items.length === 1 ? "" : "er"}</span>
+              <div class="toolbar">
+                <span class="pill">${items.length} medicin${items.length === 1 ? "" : "er"}</span>
+                <button class="btn small" type="button" data-add-template-time="${escapeAttr(time)}">Lägg till medicin</button>
+              </div>
             </div>
           `;
 
           slot.querySelector(".template-time-input").addEventListener("change", (event) => {
             updateTemplateGroupTime(items.map((item) => item.id), event.target.value);
           });
+          slot.querySelector("[data-add-template-time]").addEventListener("click", () => addTemplateItem(time));
 
           items.forEach((item) => {
             const row = document.createElement("article");
             row.className = "template-item";
             row.innerHTML = `
               <div></div>
-              ${templateField("Medicin", "text", item.medicine, item.id, "medicine")}
-              ${templateField("Dos", "text", item.dose, item.id, "dose")}
+              ${templateTextField("Medicin", item.medicine, item.id, "medicine")}
+              ${templateTextField("Dos", item.dose, item.id, "dose")}
               ${templateField("Anteckning", "text", item.note, item.id, "note")}
               <div class="toolbar">
                 <button class="btn small danger" type="button" title="Ta bort från mall">
@@ -1031,6 +1036,15 @@
         `;
       }
 
+      function templateTextField(label, value, id, key) {
+        return `
+          <label>
+            ${label}
+            <input data-id="${id}" data-template-field="${key}" type="text" value="${escapeAttr(value)}" />
+          </label>
+        `;
+      }
+
       function selectField(label, value, id, key, isTemplate) {
         const values = optionValues(key);
         if (value && !values.includes(value)) values.push(value);
@@ -1091,10 +1105,10 @@
         toast("Ny rad tillagd");
       }
 
-      function addTemplateItem() {
+      function addTemplateItem(time = "08:00") {
         state.template.push({
           id: crypto.randomUUID(),
-          time: "08:00",
+          time,
           medicine: "Ny medicin",
           dose: "",
           note: "",
@@ -1134,6 +1148,7 @@
         if (!item) return;
         item[key] = value.trim ? value.trim() : value;
         saveState();
+        renderOptionLists();
         if (shouldRender) render();
       }
 
