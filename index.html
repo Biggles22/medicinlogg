@@ -1024,6 +1024,7 @@
     <script>
       const storageKey = "medicinlogg.v2";
       const oldStorageKey = "medicinlogg.v1";
+      const doseIntervalMinutes = 180;
 
       const defaultTemplate = [
         { time: "07:00", medicine: "Madopark", dose: "150 mg", note: "" },
@@ -1266,7 +1267,7 @@
       }
 
       function buildDoseIntervalAnalysis(entries) {
-        const targetMinutes = 180;
+        const targetMinutes = doseIntervalMinutes;
         const takenSlots = groupByTime(entries)
           .filter(([, items]) => items.some((item) => item.status === "taken"))
           .map(([time, items]) => ({
@@ -1597,11 +1598,13 @@
       }
 
       function updateEntryGroupTime(ids, value) {
-        ids.forEach((id) => {
-          const entry = state.entries.find((item) => item.id === id);
-          if (entry) entry.time = value;
+        const changed = cascadeGroupTimes(entriesForDate(els.selectedDate.value), ids, value, (entry, time) => {
+          entry.time = time;
         });
+        if (!changed) return;
         saveState();
+        render();
+        toast("Tiderna uppdaterade");
       }
 
       function updateTemplate(id, key, value, shouldRender = true) {
@@ -1613,11 +1616,29 @@
       }
 
       function updateTemplateGroupTime(ids, value) {
-        ids.forEach((id) => {
-          const item = state.template.find((templateItem) => templateItem.id === id);
-          if (item) item.time = value;
+        const changed = cascadeGroupTimes(templateItems(), ids, value, (item, time) => {
+          item.time = time;
         });
+        if (!changed) return;
         saveState();
+        render();
+        toast("Mallens tider uppdaterade");
+      }
+
+      function cascadeGroupTimes(items, ids, startTime, setTime) {
+        const startMinutes = timeToMinutes(startTime);
+        if (!Number.isFinite(startMinutes)) return false;
+
+        const idSet = new Set(ids);
+        const groups = groupByTime(items);
+        const startIndex = groups.findIndex(([, groupItems]) => groupItems.some((item) => idSet.has(item.id)));
+        if (startIndex < 0) return false;
+
+        groups.slice(startIndex).forEach(([, groupItems], index) => {
+          const time = minutesToTime(startMinutes + index * doseIntervalMinutes);
+          groupItems.forEach((item) => setTime(item, time));
+        });
+        return true;
       }
 
       function updateObservation(id, key, value) {
@@ -2223,6 +2244,14 @@
         const [hours, minutes] = String(time).split(":").map(Number);
         if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return NaN;
         return hours * 60 + minutes;
+      }
+
+      function minutesToTime(totalMinutes) {
+        const minutesPerDay = 24 * 60;
+        const wrappedMinutes = ((Math.round(totalMinutes) % minutesPerDay) + minutesPerDay) % minutesPerDay;
+        const hours = Math.floor(wrappedMinutes / 60);
+        const minutes = wrappedMinutes % 60;
+        return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
       }
 
       function formatDuration(totalMinutes) {
