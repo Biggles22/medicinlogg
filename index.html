@@ -1025,6 +1025,10 @@
       const storageKey = "medicinlogg.v2";
       const oldStorageKey = "medicinlogg.v1";
       const doseIntervalMinutes = 180;
+      const builtInOptions = {
+        medicine: ["Madopark quick"],
+        dose: ["50 mg"],
+      };
 
       const defaultTemplate = [
         { time: "07:00", medicine: "Madopark", dose: "150 mg", note: "" },
@@ -1152,7 +1156,7 @@
       }
 
       function optionValues(key) {
-        const values = new Set();
+        const values = new Set(builtInOptions[key] || []);
         defaultTemplate.forEach((item) => {
           if (item[key]) values.add(item[key]);
         });
@@ -1207,7 +1211,7 @@
           `;
 
           slot.querySelector(".check").addEventListener("click", () => toggleEntryGroup(items.map((item) => item.id)));
-          slot.querySelector(".slot-time-input").addEventListener("change", (event) => {
+          slot.querySelector(".slot-time-input").addEventListener("blur", (event) => {
             updateEntryGroupTime(items.map((item) => item.id), event.target.value);
           });
 
@@ -1369,7 +1373,7 @@
             </div>
           `;
 
-          slot.querySelector(".template-time-input").addEventListener("change", (event) => {
+          slot.querySelector(".template-time-input").addEventListener("blur", (event) => {
             updateTemplateGroupTime(items.map((item) => item.id), event.target.value);
           });
 
