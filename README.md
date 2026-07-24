@@ -15,10 +15,10 @@ En statisk GitHub Pages-app för daglig medicinloggning. All personlig data spar
 
 Mallen är förifylld med:
 
-- 07:00: Madopark 150 mg, Entacapone 200 mg, Plåster 4 mg, Atorbir 10 mg
-- 10:00: Madopark 150 mg, Entacapone 200 mg
-- 13:00: Madopark 150 mg, Entacapone 200 mg
-- 16:00: Madopark 150 mg, Entacapone 200 mg
-- 19:00: Madopark 150 mg, Entacapone 200 mg
+- 07:00: Madopark 200 mg, Entacapone 200 mg, Plåster 4 mg, Atorbir 10 mg
+- 10:00: Madopark 200 mg, Entacapone 200 mg
+- 13:00: Madopark 200 mg, Entacapone 200 mg
+- 16:00: Madopark 200 mg, Entacapone 200 mg
+- 19:00: Madopark 200 mg, Entacapone 200 mg
 
 Du kan ändra mallen i fliken **Standarddag**. På fliken **Dag** kan du skapa dagens rader från mallen och sedan justera exakt tid, dos eller anteckning för just den dagen.
