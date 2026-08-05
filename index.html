@@ -1287,7 +1287,12 @@
         try {
           const parsed = JSON.parse(localStorage.getItem(storageKey));
           if (parsed && Array.isArray(parsed.template) && Array.isArray(parsed.entries)) {
-            return { ...parsed, observations: Array.isArray(parsed.observations) ? parsed.observations : [] };
+            const template = parsed.template.map((item) =>
+              item.medicine?.trim().toLowerCase() === "madopark" && item.dose?.trim().toLowerCase() === "150 mg"
+                ? { ...item, dose: "200 mg" }
+                : item,
+            );
+            return { ...parsed, template, observations: Array.isArray(parsed.observations) ? parsed.observations : [] };
           }
         } catch (error) {}
 
@@ -2746,7 +2751,7 @@
           window.location.reload();
         });
         navigator.serviceWorker
-          .register("./sw.js?v=10", { updateViaCache: "none" })
+          .register("./sw.js?v=11", { updateViaCache: "none" })
           .then((registration) => registration.update())
           .catch(() => {});
       }

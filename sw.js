@@ -1,4 +1,4 @@
-const cacheName = "medicinlogg-v10";
+const cacheName = "medicinlogg-v11";
 const filesToCache = ["./manifest.webmanifest", "./icon.svg"];
 
 self.addEventListener("install", (event) => {
