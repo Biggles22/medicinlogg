@@ -21,4 +21,10 @@ Mallen är förifylld med:
 - 16:00: Madopark 200 mg, Entacapone 200 mg
 - 19:00: Madopark 200 mg, Entacapone 200 mg
 
-Du kan ändra mallen i fliken **Standarddag**. På fliken **Dag** kan du skapa dagens rader från mallen och sedan justera exakt tid, dos eller anteckning för just den dagen.
+Du kan ändra mallen i fliken **Standarddag**. På fliken **Dag** kan du skapa dagens rader från mallen och sedan justera planerad tid, faktisk intagstid, dos eller anteckning för just den dagen.
+
+## Säkerhetskopia
+
+**Excel-rapport** skapar en läsbar rapport för uppföljning. **Säkerhetskopia** sparar däremot en JSON-fil som senare kan läsas tillbaka med **Återställ**. Spara regelbundet JSON-filen på en säker plats eftersom webbläsarens lokala data kan rensas.
+
+Appens gränssnitt cachas lokalt efter första besöket och kan därefter öppnas utan internetanslutning.

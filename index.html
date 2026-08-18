@@ -1039,21 +1039,29 @@
         </div>
 
         <div class="side-actions">
-          <button class="btn ghost" id="exportBtn" type="button" title="Exportera data">
+          <button class="btn ghost" id="exportBtn" type="button" title="Exportera Excel-rapport">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 3v12" />
               <path d="m7 10 5 5 5-5" />
               <path d="M5 21h14" />
             </svg>
-            Exportera
+            Excel-rapport
           </button>
-          <label class="btn ghost" title="Importera data">
+          <button class="btn ghost" id="backupBtn" type="button" title="Spara återställningsbar säkerhetskopia">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 3v12" />
+              <path d="m7 10 5 5 5-5" />
+              <path d="M5 21h14" />
+            </svg>
+            Säkerhetskopia
+          </button>
+          <label class="btn ghost" title="Återställ från säkerhetskopia">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 21V9" />
               <path d="m7 14 5-5 5 5" />
               <path d="M5 3h14" />
             </svg>
-            Importera
+            Återställ
             <input class="hidden" id="importInput" type="file" accept="application/json" />
           </label>
         </div>
@@ -1280,6 +1288,7 @@
         render();
       });
       document.querySelector("#exportBtn").addEventListener("click", exportData);
+      document.querySelector("#backupBtn").addEventListener("click", exportBackup);
       els.importInput.addEventListener("change", importData);
       els.selectedDate.addEventListener("change", render);
 
@@ -1292,7 +1301,11 @@
                 ? { ...item, dose: "200 mg" }
                 : item,
             );
-            return { ...parsed, template, observations: Array.isArray(parsed.observations) ? parsed.observations : [] };
+            const entries = parsed.entries.map((entry) => ({
+              ...entry,
+              ...(entry.status === "taken" && !entry.takenTime ? { takenTime: entry.time } : {}),
+            }));
+            return { ...parsed, template, entries, observations: Array.isArray(parsed.observations) ? parsed.observations : [] };
           }
         } catch (error) {}
 
@@ -1420,6 +1433,12 @@
               ${field("Dos", "text", entry.dose, entry.id, "dose")}
               ${field("Justering/anteckning", "text", entry.note, entry.id, "note")}
               <div class="toolbar">
+                ${entry.status === "taken" ? `
+                  <label>
+                    Tagen kl
+                    <input class="entry-taken-time" data-id="${entry.id}" type="time" value="${escapeAttr(entry.takenTime || entry.time)}" />
+                  </label>
+                ` : ""}
                 <select class="entry-status" data-id="${entry.id}" aria-label="Status">
                   ${statusOption("planned", entry.status)}
                   ${statusOption("taken", entry.status)}
@@ -1437,6 +1456,7 @@
               input.addEventListener("change", () => updateEntry(input.dataset.id, input.dataset.field, input.value, false));
             });
             row.querySelector(".entry-status").addEventListener("change", (event) => updateEntry(entry.id, "status", event.target.value, true));
+            row.querySelector(".entry-taken-time")?.addEventListener("change", (event) => updateEntry(entry.id, "takenTime", event.target.value, true));
             slot.append(row);
           });
 
@@ -1469,12 +1489,12 @@
 
       function buildDoseIntervalAnalysis(entries) {
         const targetMinutes = doseIntervalMinutes;
-        const takenSlots = groupByTime(entries)
-          .filter(([, items]) => items.some((item) => item.status === "taken"))
+        const takenEntries = entries.filter((item) => item.status === "taken");
+        const takenSlots = groupByTime(takenEntries, (item) => item.takenTime || item.time)
           .map(([time, items]) => ({
             time,
             minutes: timeToMinutes(time),
-            medicines: items.filter((item) => item.status === "taken").map((item) => item.medicine),
+            medicines: items.map((item) => item.medicine),
           }))
           .filter((slot) => Number.isFinite(slot.minutes))
           .sort((a, b) => a.minutes - b.minutes);
@@ -1543,7 +1563,10 @@
               </div>
             </div>
             <div class="summary-timeline">
-              ${timelineItems.map((item) => item.type === "dose" ? summaryDoseCard(item, intervalByCurrentTime.get(item.time)) : summaryCommentCard(item)).join("")}
+              ${timelineItems.map((item) => {
+                const actualTime = uniqueList(item.items?.filter((entry) => entry.status === "taken").map((entry) => entry.takenTime || entry.time) || [])[0];
+                return item.type === "dose" ? summaryDoseCard(item, intervalByCurrentTime.get(actualTime)) : summaryCommentCard(item);
+              }).join("")}
             </div>
           </div>
         `;
@@ -1552,7 +1575,7 @@
       function buildSummaryModel(date) {
         const entries = entriesForDate(date);
         const observations = observationsForDate(date);
-        const planned = entries.filter((entry) => entry.status !== "skipped").length;
+        const planned = entries.length;
         const taken = entries.filter((entry) => entry.status === "taken").length;
         const skipped = entries.filter((entry) => entry.status === "skipped").length;
         const percent = planned ? Math.round((taken / planned) * 100) : 0;
@@ -1594,6 +1617,7 @@
           const dose = entry.dose ? ` ${entry.dose}` : "";
           return `${entry.medicine}${dose} · ${statusLabel(entry.status)}`;
         });
+        const actualTimes = uniqueList(item.items.filter((entry) => entry.status === "taken").map((entry) => entry.takenTime || entry.time));
         return `
           <article class="summary-card ${status.className}">
             <div class="summary-dot">${status.symbol}</div>
@@ -1606,6 +1630,7 @@
                 <span class="pill ${status.className}">${escapeHtml(status.shortLabel)}</span>
               </div>
               ${interval ? `<div class="summary-note">Mellanrum sedan förra tagna: ${formatDuration(interval.minutes)} (${formatDelta(interval.delta)} mot 3 tim)</div>` : ""}
+              ${actualTimes.length ? `<div class="summary-note">Faktisk intagstid: ${escapeHtml(actualTimes.join(", "))}</div>` : ""}
               <div class="summary-meds">
                 ${medicines.map((medicine) => `<span class="summary-med">${escapeHtml(medicine)}</span>`).join("")}
               </div>
@@ -1948,7 +1973,7 @@
             </div>
             <div class="meta">
               <strong>${escapeHtml(entry.medicine)}</strong>
-              <span>${formatDate(entry.date)} · ${escapeHtml(entry.time)} · ${escapeHtml(entry.dose || "Ingen dos")}${entry.note ? ` · ${escapeHtml(entry.note)}` : ""}</span>
+              <span>${formatDate(entry.date)} · planerad ${escapeHtml(entry.time)}${entry.status === "taken" ? ` · tagen ${escapeHtml(entry.takenTime || entry.time)}` : ""} · ${escapeHtml(entry.dose || "Ingen dos")}${entry.note ? ` · ${escapeHtml(entry.note)}` : ""}</span>
             </div>
             <span class="pill ${entry.status === "taken" ? "done" : ""}">${statusLabel(entry.status)}</span>
           `;
@@ -1958,7 +1983,7 @@
 
       function renderStats() {
         const entries = entriesForDate(els.selectedDate.value);
-        const planned = entries.filter((entry) => entry.status !== "skipped").length;
+        const planned = entries.length;
         const taken = entries.filter((entry) => entry.status === "taken").length;
         const percent = planned ? Math.round((taken / planned) * 100) : 0;
         els.todayPercent.textContent = `${percent}%`;
@@ -2122,6 +2147,10 @@
         const entry = state.entries.find((item) => item.id === id);
         if (!entry) return;
         entry[key] = value.trim ? value.trim() : value;
+        if (key === "status") {
+          if (value === "taken" && !entry.takenTime) entry.takenTime = defaultTakenTime(entry);
+          if (value !== "taken") delete entry.takenTime;
+        }
         saveState();
         if (shouldRender) render();
       }
@@ -2193,6 +2222,8 @@
         const shouldMarkTaken = entries.some((entry) => entry.status !== "taken");
         entries.forEach((entry) => {
           entry.status = shouldMarkTaken ? "taken" : "planned";
+          if (shouldMarkTaken) entry.takenTime = defaultTakenTime(entry);
+          else delete entry.takenTime;
         });
         saveState();
         render();
@@ -2237,11 +2268,12 @@
           .sort((a, b) => a.time.localeCompare(b.time) || (a.createdAt || "").localeCompare(b.createdAt || ""));
       }
 
-      function groupByTime(entries) {
+      function groupByTime(entries, getTime = (entry) => entry.time) {
         const groups = new Map();
         entries.forEach((entry) => {
-          if (!groups.has(entry.time)) groups.set(entry.time, []);
-          groups.get(entry.time).push(entry);
+          const time = getTime(entry);
+          if (!groups.has(time)) groups.set(time, []);
+          groups.get(time).push(entry);
         });
         return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
       }
@@ -2268,6 +2300,25 @@
         link.click();
         URL.revokeObjectURL(url);
         toast("Excel-fil exporterad");
+      }
+
+      function exportBackup() {
+        const backup = {
+          format: "medicinlogg-backup",
+          version: 2,
+          exportedAt: new Date().toISOString(),
+          template: state.template,
+          entries: state.entries,
+          observations: state.observations,
+        };
+        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `medicinlogg-sakerhetskopia-${todayKey()}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+        toast("Säkerhetskopia sparad");
       }
 
       function buildXlsxWorkbook() {
@@ -2299,7 +2350,7 @@
           xlsxTextRow(["Historik"], 2, 26),
           xlsxTextRow([`${historyEntries.length} loggade rader`], 3),
           xlsxBlankRow(),
-          xlsxTextRow(["Datum", "Veckodag", "Vecka", "Tid", "Medicin", "Dos", "Status", "Anteckning"], 4),
+          xlsxTextRow(["Datum", "Veckodag", "Vecka", "Planerad tid", "Faktisk intagstid", "Medicin", "Dos", "Status", "Anteckning"], 4),
           ...historyEntries.map((entry) => {
             const date = new Date(`${entry.date}T12:00:00`);
             const style = entry.status === "taken" ? 5 : entry.status === "skipped" ? 6 : 1;
@@ -2308,6 +2359,7 @@
               xlsxText(date.toLocaleDateString("sv-SE", { weekday: "long" }), style),
               xlsxNumber(getWeekNumber(date), style),
               xlsxText(entry.time, style),
+              xlsxText(entry.status === "taken" ? entry.takenTime || entry.time : "", style),
               xlsxText(entry.medicine, style),
               xlsxText(entry.dose, style),
               xlsxText(statusLabel(entry.status), style),
@@ -2373,7 +2425,7 @@
           ["xl/_rels/workbook.xml.rels", xlsxWorkbookRelationships()],
           ["xl/styles.xml", xlsxStylesXml()],
           ["xl/worksheets/sheet1.xml", xlsxWorksheetXml([18, 18, 12, 12, 12, 15, 14], overviewRows)],
-          ["xl/worksheets/sheet2.xml", xlsxWorksheetXml([16, 14, 10, 11, 24, 16, 16, 38], historyRows)],
+          ["xl/worksheets/sheet2.xml", xlsxWorksheetXml([16, 14, 10, 14, 16, 24, 16, 16, 38], historyRows)],
           ["xl/worksheets/sheet3.xml", xlsxWorksheetXml([16, 11, 11, 16, 20, 34, 16], intervalRows)],
           ["xl/worksheets/sheet4.xml", xlsxWorksheetXml([16, 11, 44, 20, 18, 20, 18], observationRows)],
           ["xl/worksheets/sheet5.xml", xlsxWorksheetXml([12, 26, 18, 42], templateRows)],
@@ -2384,7 +2436,7 @@
         const dates = [...new Set(entries.map((entry) => entry.date))].sort((a, b) => a.localeCompare(b));
         return dates.map((dateKey) => {
           const dateEntries = entries.filter((entry) => entry.date === dateKey);
-          const planned = dateEntries.filter((entry) => entry.status !== "skipped").length;
+          const planned = dateEntries.length;
           const taken = dateEntries.filter((entry) => entry.status === "taken").length;
           const skipped = dateEntries.filter((entry) => entry.status === "skipped").length;
           const date = new Date(`${dateKey}T12:00:00`);
@@ -2726,10 +2778,11 @@
         reader.onload = () => {
           try {
             const imported = JSON.parse(reader.result);
-            if (!Array.isArray(imported.template) || !Array.isArray(imported.entries)) throw new Error("Fel format");
-            state.template = imported.template;
-            state.entries = imported.entries;
-            state.observations = Array.isArray(imported.observations) ? imported.observations : [];
+            if (imported.format !== "medicinlogg-backup" || !Array.isArray(imported.template) || !Array.isArray(imported.entries)) throw new Error("Fel format");
+            if (!confirm("Återställ säkerhetskopian? Nuvarande loggdata ersätts.")) return;
+            state.template = imported.template.map(validateTemplateItem);
+            state.entries = imported.entries.map(validateEntry);
+            state.observations = Array.isArray(imported.observations) ? imported.observations.map(validateObservation) : [];
             saveState();
             render();
             toast("Data importerad");
@@ -2751,7 +2804,7 @@
           window.location.reload();
         });
         navigator.serviceWorker
-          .register("./sw.js?v=11", { updateViaCache: "none" })
+          .register("./sw.js?v=12", { updateViaCache: "none" })
           .then((registration) => registration.update())
           .catch(() => {});
       }
@@ -2767,6 +2820,51 @@
       function currentTime() {
         const now = new Date();
         return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+      }
+
+      function defaultTakenTime(entry) {
+        return entry.date === todayKey() ? currentTime() : entry.time;
+      }
+
+      function validateTemplateItem(item, index) {
+        if (!item || !isValidTime(item.time) || typeof item.medicine !== "string") throw new Error("Felaktig mallrad");
+        return {
+          id: typeof item.id === "string" ? item.id : crypto.randomUUID(),
+          order: Number.isFinite(item.order) ? item.order : index,
+          time: item.time,
+          medicine: item.medicine,
+          dose: typeof item.dose === "string" ? item.dose : "",
+          note: typeof item.note === "string" ? item.note : "",
+        };
+      }
+
+      function validateEntry(entry, index) {
+        const statuses = ["planned", "taken", "skipped"];
+        if (!entry || !/^\d{4}-\d{2}-\d{2}$/.test(entry.date) || !isValidTime(entry.time) || typeof entry.medicine !== "string" || !statuses.includes(entry.status)) {
+          throw new Error("Felaktig loggrad");
+        }
+        return {
+          ...entry,
+          id: typeof entry.id === "string" ? entry.id : crypto.randomUUID(),
+          order: Number.isFinite(entry.order) ? entry.order : index,
+          dose: typeof entry.dose === "string" ? entry.dose : "",
+          note: typeof entry.note === "string" ? entry.note : "",
+          ...(entry.status === "taken" ? { takenTime: isValidTime(entry.takenTime) ? entry.takenTime : entry.time } : { takenTime: undefined }),
+        };
+      }
+
+      function validateObservation(observation) {
+        if (!observation || !/^\d{4}-\d{2}-\d{2}$/.test(observation.date) || !isValidTime(observation.time) || typeof observation.text !== "string") {
+          throw new Error("Felaktig kommentar");
+        }
+        return {
+          ...observation,
+          id: typeof observation.id === "string" ? observation.id : crypto.randomUUID(),
+        };
+      }
+
+      function isValidTime(value) {
+        return typeof value === "string" && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
       }
 
       function timeToMinutes(time) {

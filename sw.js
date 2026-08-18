@@ -1,5 +1,5 @@
-const cacheName = "medicinlogg-v11";
-const filesToCache = ["./manifest.webmanifest", "./icon.svg"];
+const cacheName = "medicinlogg-v12";
+const filesToCache = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(cacheName).then((cache) => cache.addAll(filesToCache)));
@@ -27,7 +27,17 @@ self.addEventListener("fetch", (event) => {
     requestUrl.pathname.endsWith("/index.html");
 
   if (isAppPage) {
-    event.respondWith(fetch(event.request, { cache: "reload" }));
+    event.respondWith(
+      fetch(event.request, { cache: "no-cache" })
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(cacheName).then((cache) => cache.put("./index.html", copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match("./index.html"))
+    );
     return;
   }
 
