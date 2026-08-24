@@ -1088,6 +1088,7 @@
           <button class="tab" data-view="summary" type="button">Summering</button>
           <button class="tab" data-view="template" type="button">Standarddag</button>
           <button class="tab" data-view="history" type="button">Historik</button>
+          <button class="tab" data-view="settings" type="button">Inställningar</button>
         </div>
 
         <section class="view active" id="todayView">
@@ -1209,6 +1210,44 @@
             </div>
           </section>
         </section>
+
+        <section class="view" id="settingsView">
+          <section class="panel">
+            <div class="panel-header">
+              <h3>Molnsynk</h3>
+              <span class="pill" id="cloudStatus">Kontrollerar…</span>
+            </div>
+            <div class="panel-body">
+              <p>Loggen sparas alltid lokalt först och synkas när internet finns. Varje person ska använda ett eget konto.</p>
+              <form class="observation-form" id="cloudSignInForm">
+                <label>
+                  E-post
+                  <input id="cloudEmail" type="email" autocomplete="email" required placeholder="namn@example.se" />
+                </label>
+                <button class="btn primary" type="submit">Skicka inloggningslänk</button>
+              </form>
+              <div class="toolbar">
+                <button class="btn hidden" id="cloudSignOutBtn" type="button">Logga ut</button>
+                <button class="btn" id="syncNowBtn" type="button">Synka nu</button>
+              </div>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="panel-header"><h3>Kopplade tjänster</h3></div>
+            <div class="panel-body">
+              <p><strong>PS Medicinkoll</strong> kan efter separat OAuth-godkännande läsa loggar och observationer. Tjänsten kan aldrig skriva eller ändra data via GPT Action.</p>
+              <p>Åtkomsten återkallas i Supabase-kontots auktoriserade appar. Anslutning aktiveras efter att OAuth-klienten har registrerats.</p>
+            </div>
+          </section>
+          <section class="panel danger-zone">
+            <div class="panel-header"><h3>Integritet och konto</h3></div>
+            <div class="panel-body">
+              <p><a href="./privacy/">Läs integritetspolicyn</a></p>
+              <p>Kontoradering tar bort molnloggar, observationer och användarkontot. Den lokala kopian ligger kvar tills du själv nollställer den.</p>
+              <button class="btn danger" id="deleteCloudAccountBtn" type="button" disabled>Radera mitt konto och mina molndata</button>
+            </div>
+          </section>
+        </section>
       </main>
     </div>
 
@@ -1216,6 +1255,8 @@
     <datalist id="doseOptions"></datalist>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+    <script src="./config.js"></script>
+    <script src="./cloud-sync.js"></script>
     <script>
       const storageKey = "medicinlogg.v2";
       const oldStorageKey = "medicinlogg.v1";
@@ -1338,6 +1379,7 @@
 
       function saveState() {
         localStorage.setItem(storageKey, JSON.stringify(state));
+        window.medicinkollCloud?.queueSync(state);
       }
 
       function render() {
@@ -2038,6 +2080,7 @@
         const existing = entriesForDate(date).length;
         if (existing && !confirm("Dagen har redan rader. Vill du ersätta dem med standarddagen?")) return;
         if (existing) {
+          state.entries.filter((entry) => entry.date === date).forEach((entry) => window.medicinkollCloud?.queueDelete("dose", entry.id));
           state.entries = state.entries.filter((entry) => entry.date !== date);
         }
         state.template.forEach((item) => {
@@ -2134,6 +2177,8 @@
           toast("Nollställning avbruten");
           return;
         }
+        state.entries.forEach((entry) => window.medicinkollCloud?.queueDelete("dose", entry.id));
+        state.observations.forEach((item) => window.medicinkollCloud?.queueDelete("observation", item.id));
         state.entries = [];
         state.observations = [];
         localStorage.removeItem(oldStorageKey);
@@ -2230,6 +2275,7 @@
       }
 
       function deleteEntry(id) {
+        window.medicinkollCloud?.queueDelete("dose", id);
         state.entries = state.entries.filter((item) => item.id !== id);
         saveState();
         render();
@@ -2244,6 +2290,7 @@
       }
 
       function deleteObservation(id) {
+        window.medicinkollCloud?.queueDelete("observation", id);
         state.observations = state.observations.filter((item) => item.id !== id);
         saveState();
         render();
@@ -2943,6 +2990,31 @@
         clearTimeout(toast.timer);
         toast.timer = setTimeout(() => els.toast.classList.remove("show"), 1800);
       }
+
+      document.querySelector("#cloudSignInForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          await window.medicinkollCloud.signIn(document.querySelector("#cloudEmail").value.trim());
+          toast("Kontrollera din e-post för inloggningslänken");
+        } catch (error) {
+          toast(error.message === "missing_configuration" ? "Molnsynk är inte konfigurerad" : "Inloggningen misslyckades");
+        }
+      });
+      document.querySelector("#cloudSignOutBtn").addEventListener("click", async () => {
+        await window.medicinkollCloud.signOut();
+        toast("Du är utloggad");
+      });
+      document.querySelector("#syncNowBtn").addEventListener("click", () => window.medicinkollCloud.sync());
+      document.querySelector("#deleteCloudAccountBtn").addEventListener("click", async () => {
+        if (!confirm("Radera kontot och alla molndata permanent? Den lokala kopian behålls.")) return;
+        if (prompt('Skriv RADERA för att bekräfta.') !== "RADERA") return;
+        try {
+          await window.medicinkollCloud.deleteAccount();
+          toast("Kontot och molndata har raderats");
+        } catch (_) {
+          toast("Kontot kunde inte raderas");
+        }
+      });
     </script>
   </body>
 </html>

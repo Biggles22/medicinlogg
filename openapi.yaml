@@ -1,0 +1,189 @@
+openapi: 3.1.0
+info:
+  title: Medicinkoll read-only API
+  version: 1.0.0
+  description: Read-only access to the authenticated user's Medicinkoll logs. It cannot change medication data or schedules.
+servers:
+  - url: https://lurznugdkxnpnkmybjad.supabase.co/functions/v1
+security:
+  - supabaseOAuth: [openid, email]
+paths:
+  /medication-context:
+    get:
+      operationId: getMedicationContext
+      summary: Get detailed medication logs and observations
+      description: Defaults to the latest seven days. Detail requests are limited to 31 days.
+      parameters:
+        - $ref: '#/components/parameters/OptionalFrom'
+        - $ref: '#/components/parameters/OptionalTo'
+      responses:
+        '200':
+          description: Medication context from the user's own log
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MedicationContext' }
+        '400': { $ref: '#/components/responses/BadRange' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /medication-summary:
+    get:
+      operationId: getMedicationSummary
+      summary: Get mathematical medication statistics
+      description: Returns counts and timing statistics, not a medical assessment. Maximum period is 366 days.
+      parameters:
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+      responses:
+        '200':
+          description: Aggregated medication statistics
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MedicationSummary' }
+        '400': { $ref: '#/components/responses/BadRange' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /current-medications:
+    get:
+      operationId: getCurrentMedications
+      summary: Get medications represented in recent Medicinkoll logs
+      description: This is not a verified prescription or medical order.
+      responses:
+        '200':
+          description: Medication names, doses, and planned times inferred from the latest 30 days
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CurrentMedications' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+components:
+  securitySchemes:
+    supabaseOAuth:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://lurznugdkxnpnkmybjad.supabase.co/auth/v1/oauth/authorize
+          tokenUrl: https://lurznugdkxnpnkmybjad.supabase.co/auth/v1/oauth/token
+          scopes:
+            openid: Authenticate the user
+            email: Identify the user's own Medicinkoll account server-side
+  parameters:
+    From:
+      name: from
+      in: query
+      required: true
+      schema: { type: string, format: date }
+    To:
+      name: to
+      in: query
+      required: true
+      schema: { type: string, format: date }
+    OptionalFrom:
+      name: from
+      in: query
+      required: false
+      schema: { type: string, format: date }
+    OptionalTo:
+      name: to
+      in: query
+      required: false
+      schema: { type: string, format: date }
+  responses:
+    BadRange:
+      description: Invalid or excessive date range
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthenticated:
+      description: Missing, invalid, expired, or revoked bearer token
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: The authenticated user lacks access
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    RateLimited:
+      description: Per-user and per-route request limit exceeded
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties: { error: { type: string } }
+      additionalProperties: false
+    DoseLog:
+      type: object
+      required: [id, scheduled_at, medication_name, dose, status]
+      properties:
+        id: { type: string, format: uuid }
+        scheduled_at: { type: string, format: date-time }
+        taken_at: { type: [string, 'null'], format: date-time }
+        medication_name: { type: string }
+        dose: { type: string }
+        status: { type: string, enum: [planned, taken, skipped] }
+        note: { type: [string, 'null'] }
+      additionalProperties: false
+    Observation:
+      type: object
+      required: [observed_at, text]
+      properties:
+        observed_at: { type: string, format: date-time }
+        text: { type: string }
+        category: { type: [string, 'null'] }
+        severity: { type: [integer, 'null'], minimum: 0, maximum: 4 }
+      additionalProperties: false
+    MedicationContext:
+      type: object
+      required: [from, to, timezone, dose_logs, observations]
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        timezone: { type: string, const: Europe/Stockholm }
+        dose_logs: { type: array, items: { $ref: '#/components/schemas/DoseLog' } }
+        observations: { type: array, items: { $ref: '#/components/schemas/Observation' } }
+      additionalProperties: false
+    DelayStatistics:
+      type: object
+      required: [median, average, p90, maximum]
+      properties:
+        median: { type: [integer, 'null'] }
+        average: { type: [number, 'null'] }
+        p90: { type: [integer, 'null'] }
+        maximum: { type: [integer, 'null'] }
+    MedicationSummary:
+      type: object
+      required: [period, scheduled_count, taken_count, skipped_count, unresolved_count, delay_minutes, by_medication, by_day]
+      properties:
+        period:
+          type: object
+          required: [from, to]
+          properties:
+            from: { type: string, format: date }
+            to: { type: string, format: date }
+        scheduled_count: { type: integer, minimum: 0 }
+        taken_count: { type: integer, minimum: 0 }
+        skipped_count: { type: integer, minimum: 0 }
+        unresolved_count: { type: integer, minimum: 0 }
+        delay_minutes: { $ref: '#/components/schemas/DelayStatistics' }
+        by_medication: { type: array, items: { type: object } }
+        by_day: { type: array, items: { type: object } }
+    CurrentMedications:
+      type: object
+      required: [source, medications]
+      properties:
+        source: { type: string, const: Medicinkoll user log }
+        medications:
+          type: array
+          items:
+            type: object
+            required: [name, dose, planned_times]
+            properties:
+              name: { type: string }
+              dose: { type: string }
+              planned_times: { type: array, items: { type: string, pattern: '^([01]\\d|2[0-3]):[0-5]\\d$' } }

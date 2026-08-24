@@ -1,0 +1,15 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+
+const openapi = readFileSync("openapi.yaml", "utf8");
+const paths = openapi.split("components:")[0];
+assert.match(paths, /operationId: getMedicationContext/);
+assert.match(paths, /operationId: getMedicationSummary/);
+assert.match(paths, /operationId: getCurrentMedications/);
+assert.doesNotMatch(paths, /^\s{4}(post|put|patch|delete):/m, "GPT Action must expose GET only");
+
+const clientFiles = ["index.html", "cloud-sync.js", "config.js"].map((file) => readFileSync(file, "utf8")).join("\n");
+assert.doesNotMatch(clientFiles, /service_role\s*[:=]\s*["'][^"']+/i);
+assert.doesNotMatch(clientFiles, /database_password\s*[:=]\s*["'][^"']+/i);
+assert.match(readFileSync("supabase/migrations/202608240001_initial_schema.sql", "utf8"), /enable row level security/g);
+console.log("Static security checks passed");

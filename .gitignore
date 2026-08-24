@@ -1,0 +1,12 @@
+# Local Supabase CLI linkage and runtime metadata
+supabase/.temp/
+
+# Local secrets and environment overrides
+.env
+.env.*
+!.env.example
+
+# Dependencies and generated reports
+node_modules/
+coverage/
+*.log

@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="sv">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Anslut PS Medicinkoll</title>
+<style>body{font:16px/1.6 system-ui;margin:0;background:#f4f7f5;color:#17362d}main{max-width:620px;margin:8vh auto;padding:20px}.card{background:white;padding:32px;border-radius:18px;box-shadow:0 12px 35px #17362d18}.actions{display:flex;gap:12px;margin-top:24px}button,a.button{font:inherit;padding:11px 18px;border-radius:10px;border:1px solid #176b53;text-decoration:none}.allow{background:#176b53;color:white}.cancel{background:white;color:#17362d}.notice{background:#fff4d6;padding:12px;border-radius:10px}</style></head>
+<body><main><div class="card">
+  <h1>Anslut PS Medicinkoll</h1>
+  <p>PS Medicinkoll vill få läsåtkomst till dina medicinloggar och observationer för att kunna analysera medicinering, dosglapp och symtommönster.</p>
+  <p><strong>PS Medicinkoll kan inte ändra din medicinering eller dina registrerade uppgifter.</strong></p>
+  <dl id="details" hidden><dt>Tjänst</dt><dd id="clientName"></dd><dt>Begärd åtkomst</dt><dd id="scopes"></dd></dl>
+  <p class="notice" id="status" role="status">Kontrollerar auktoriseringsförfrågan…</p>
+  <div class="actions"><button class="allow" id="allow" disabled>Tillåt</button><button class="cancel" id="deny" disabled>Avbryt</button></div>
+</div></main>
+<script src="../../config.js"></script><script src="./consent.js"></script>
+</body></html>
