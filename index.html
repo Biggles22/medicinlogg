@@ -2998,7 +2998,7 @@
           await window.medicinkollCloud.signIn(document.querySelector("#cloudEmail").value.trim());
           toast("Kontrollera din e-post för inloggningslänken");
         } catch (error) {
-          toast(error.message === "missing_configuration" ? "Molnsynk är inte konfigurerad" : "Inloggningen misslyckades");
+          toast(error.message === "missing_configuration" ? "Molnsynk är inte konfigurerad" : `Inloggningen misslyckades: ${error.message}`);
         }
       });
       document.querySelector("#cloudSignOutBtn").addEventListener("click", async () => {

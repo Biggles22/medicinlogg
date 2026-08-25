@@ -183,12 +183,16 @@
 
   async function signIn(email) {
     if (!configured) throw new Error("missing_configuration");
-    const response = await fetch(`${config.supabaseUrl}/auth/v1/otp`, {
+    const redirectTo = location.origin + location.pathname + location.search;
+    const response = await fetch(`${config.supabaseUrl}/auth/v1/otp?redirect_to=${encodeURIComponent(redirectTo)}`, {
       method: "POST",
       headers: { apikey: config.supabaseAnonKey, "Content-Type": "application/json" },
-      body: JSON.stringify({ email, create_user: true, redirect_to: location.origin + location.pathname + location.search }),
+      body: JSON.stringify({ email, create_user: true }),
     });
-    if (!response.ok) throw new Error("sign_in_failed");
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.msg || error.message || "sign_in_failed");
+    }
   }
 
   async function consumeAuthCallback() {
