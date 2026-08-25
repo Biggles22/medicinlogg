@@ -2257,6 +2257,8 @@
         const entry = state.entries.find((item) => item.id === id);
         if (!entry) return;
         entry.status = entry.status === "taken" ? "planned" : "taken";
+        if (entry.status === "taken") entry.takenTime = defaultTakenTime(entry);
+        else delete entry.takenTime;
         saveState();
         render();
       }
@@ -2871,7 +2873,7 @@
       }
 
       function defaultTakenTime(entry) {
-        return entry.date === todayKey() ? currentTime() : entry.time;
+        return entry.time;
       }
 
       function validateTemplateItem(item, index) {
