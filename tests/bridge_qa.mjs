@@ -8,7 +8,7 @@ assert.match(projectRef || "", /^[a-z]{20}$/);
 assert.ok(bridgeSecret, "GPT_BRIDGE_TEST_SECRET is required");
 const projectUrl = `https://${projectRef}.supabase.co`;
 const clientId = "960f3173-7833-44c7-9c49-a54f337bcf07";
-const redirectUri = "https://chatgpt.com/aip/g-14ae017667c2911bcc6add2c9b5e3d31f17008f3/oauth/callback";
+const redirectUri = "https://chatgpt.com/aip/g-773c0f67ee8cfb6c55c147b4d4a910a8715e058f/oauth/callback";
 const keys = JSON.parse(execFileSync("npx", ["--yes", "supabase", "projects", "api-keys", "--project-ref", projectRef, "--output", "json"], { encoding: "utf8" }));
 const publishableKey = keys.find((key) => key.type === "publishable")?.api_key;
 const serviceKey = keys.find((key) => key.id === "service_role")?.api_key;

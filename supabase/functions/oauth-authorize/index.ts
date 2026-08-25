@@ -10,7 +10,8 @@ Deno.serve(async (request) => {
     const state = params.get("state") || "";
     const responseType = params.get("response_type") || "";
     const requestedScopes = (params.get("scope") || "email").split(/\s+/).filter(Boolean);
-    if (clientId !== config.clientId || !config.redirectUris.includes(redirectUri)) return oauthError("invalid_client", "Unknown client or redirect URI", 400);
+    if (clientId !== config.clientId) return oauthError("invalid_client", "Unknown client ID", 400);
+    if (!config.redirectUris.includes(redirectUri)) return oauthError("invalid_redirect_uri", `Redirect URI is not registered: ${redirectUri || "[missing]"}`, 400);
     if (responseType !== "code" || !state || state.length > 1024) return oauthError("invalid_request", "response_type=code and state are required", 400);
     if (requestedScopes.some((scope) => !["openid", "email"].includes(scope))) return oauthError("invalid_scope", "Unsupported scope", 400);
 
