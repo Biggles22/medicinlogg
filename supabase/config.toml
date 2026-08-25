@@ -28,13 +28,25 @@ authorization_url_path = "/oauth/consent"
 allow_dynamic_registration = false
 
 [functions.medication-context]
-verify_jwt = true
+verify_jwt = false
 
 [functions.medication-summary]
-verify_jwt = true
+verify_jwt = false
 
 [functions.current-medications]
-verify_jwt = true
+verify_jwt = false
 
 [functions.delete-account]
 verify_jwt = true
+
+[functions.oauth-authorize]
+verify_jwt = false
+
+[functions.oauth-consent]
+verify_jwt = false
+
+[functions.oauth-token]
+verify_jwt = false
+
+[functions.oauth-revoke]
+verify_jwt = false

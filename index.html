@@ -1236,7 +1236,8 @@
             <div class="panel-header"><h3>Kopplade tjänster</h3></div>
             <div class="panel-body">
               <p><strong>PS Medicinkoll</strong> kan efter separat OAuth-godkännande läsa loggar och observationer. Tjänsten kan aldrig skriva eller ändra data via GPT Action.</p>
-              <p>Åtkomsten återkallas i Supabase-kontots auktoriserade appar. Anslutning aktiveras efter att OAuth-klienten har registrerats.</p>
+              <p>Du kan återkalla alla aktiva PS Medicinkoll-token här. Efteråt måste tjänsten anslutas på nytt.</p>
+              <button class="btn" id="disconnectGptBtn" type="button" disabled>Koppla från PS Medicinkoll</button>
             </div>
           </section>
           <section class="panel danger-zone">
@@ -3005,6 +3006,15 @@
         toast("Du är utloggad");
       });
       document.querySelector("#syncNowBtn").addEventListener("click", () => window.medicinkollCloud.sync());
+      document.querySelector("#disconnectGptBtn").addEventListener("click", async () => {
+        if (!confirm("Koppla från PS Medicinkoll och återkalla dess läsåtkomst?")) return;
+        try {
+          await window.medicinkollCloud.disconnectGpt();
+          toast("PS Medicinkoll har kopplats från");
+        } catch (_) {
+          toast("Tjänsten kunde inte kopplas från");
+        }
+      });
       document.querySelector("#deleteCloudAccountBtn").addEventListener("click", async () => {
         if (!confirm("Radera kontot och alla molndata permanent? Den lokala kopian behålls.")) return;
         if (prompt('Skriv RADERA för att bekräfta.') !== "RADERA") return;

@@ -49,22 +49,23 @@ Detta är **inte driftsatt bara genom att filerna finns i repot**.
 4. Driftsätt funktionerna i `supabase/functions`.
 5. Aktivera e-post/OTP och lägg till GitHub Pages-adressen som tillåten redirect-URL.
 6. Kopiera `config.example.js` till deploymentens `config.js` och ange endast projekt-URL och publik/publishable key. Lägg aldrig in service-role key eller annan hemlighet i GitHub Pages.
-7. Aktivera Supabase OAuth Server med asymmetrisk JWT-signering och registrera `PS Medicinkoll` som en separat klient med GPT-editorns callback-URL.
-8. Validera `openapi.yaml` och importera det i GPT-editorn. Ange OAuth Client ID/Secret där, aldrig i repot.
-9. Koppla consent-sidan till den exakta consent-mekanism som visas för projektets OAuth Server. Sidan är avsiktligt spärrad tills den externa OAuth-klienten finns.
+7. Sätt bryggans `GPT_OAUTH_*`-värden som Supabase Edge Function Secrets. Client Secret får aldrig ligga i repot.
+8. Validera `openapi.yaml` och importera det i GPT-editorn. Ange bryggans Client ID/Secret där, aldrig i PWA:n eller repot.
+9. Verifiera authorize, consent, engångskod, tokenrotation och återkallning med `tests/bridge_qa.mjs`.
 10. Slutför alla markerade delar i integritetspolicyn och genomför GDPR-/DPIA-bedömning före verkliga hälsodata.
 
 OAuth-adresser efter projektstart:
 
 ```text
-Authorization: https://<project-ref>.supabase.co/auth/v1/oauth/authorize
-Token:         https://<project-ref>.supabase.co/auth/v1/oauth/token
-JWKS:          https://<project-ref>.supabase.co/auth/v1/.well-known/jwks.json
+Authorization: https://<project-ref>.supabase.co/functions/v1/oauth-authorize
+Token:         https://<project-ref>.supabase.co/functions/v1/oauth-token
 API:           https://<project-ref>.supabase.co/functions/v1
 ```
 
+Bryggan behövs eftersom GPT Actions OAuth-flöde inte skickar PKCE-parametrarna som Supabase OAuth 2.1 Server kräver. Bryggan utfärdar egna opaka read-only-token. Endast SHA-256-hashar lagras; användaridentiteten löses server-side och samtliga hälsodatafrågor filtreras explicit på den användaren.
+
 ### Kontroller
 
-Kör `node tests/static_checks.mjs`. Testet säkerställer bland annat att GPT Action-schemat bara exponerar GET och att uppenbara serverhemligheter inte finns i klientfilerna. Databastestet kontrollerar uttryckligen att användare A inte kan läsa användare B:s doser eller observationer.
+Kör `node tests/static_checks.mjs`. Testet säkerställer bland annat att GPT Action-schemat bara exponerar GET och att uppenbara serverhemligheter inte finns i klientfilerna. Databastestet kontrollerar uttryckligen att användare A inte kan läsa användare B:s doser eller observationer. `tests/bridge_qa.mjs` kör ett fullständigt syntetiskt OAuth-flöde mot det länkade testprojektet och kräver att bridge-hemligheten tillförs enbart som processmiljö.
 
 Före produktion återstår dessutom verifiering av två riktiga testkonton, offline/online-scenariot med exakt tre poster, OAuth-återkallning, konto- och backuppruning samt ett datumintervall över CET/CEST-skifte.

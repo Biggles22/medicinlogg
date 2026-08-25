@@ -245,6 +245,11 @@
     renderStatus();
   }
 
+  async function disconnectGpt() {
+    if (!session) throw new Error("authentication_required");
+    await request("/functions/v1/oauth-revoke", { method: "POST", body: "{}" });
+  }
+
   function renderStatus(custom) {
     const root = document.querySelector("#cloudStatus");
     if (!root) return;
@@ -257,10 +262,12 @@
     document.querySelector("#cloudSignInForm")?.classList.toggle("hidden", Boolean(session));
     const deleteButton = document.querySelector("#deleteCloudAccountBtn");
     if (deleteButton) deleteButton.disabled = !session;
+    const disconnectButton = document.querySelector("#disconnectGptBtn");
+    if (disconnectButton) disconnectButton.disabled = !session;
   }
 
   window.addEventListener("online", sync);
   window.addEventListener("visibilitychange", () => { if (!document.hidden) sync(); });
-  window.medicinkollCloud = { queueSync, queueDelete, sync, signIn, signOut, deleteAccount, configured, getSession: () => session, localTimestamp };
+  window.medicinkollCloud = { queueSync, queueDelete, sync, signIn, signOut, deleteAccount, disconnectGpt, configured, getSession: () => session, localTimestamp };
   document.addEventListener("DOMContentLoaded", consumeAuthCallback);
 })();

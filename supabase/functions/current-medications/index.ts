@@ -5,12 +5,13 @@ Deno.serve(async (request) => {
   if (options) return options;
   if (request.method !== "GET") return json({ error: "method_not_allowed" }, 405);
   try {
-    const { client } = await authenticatedClient(request);
-    await enforceRateLimit(client, "current-medications");
+    const { client, user, authKind } = await authenticatedClient(request);
+    await enforceRateLimit(client, "current-medications", user.id, authKind);
     const since = new Date();
     since.setUTCDate(since.getUTCDate() - 30);
     const { data, error } = await client.from("dose_logs")
       .select("medication_name,dose,scheduled_at")
+      .eq("user_id", user.id)
       .gte("scheduled_at", since.toISOString()).order("scheduled_at");
     if (error) throw new Error("query_failed");
     const grouped = new Map<string, { name: string; dose: string; planned_times: Set<string> }>();

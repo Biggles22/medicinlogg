@@ -5,11 +5,12 @@ Deno.serve(async (request) => {
   if (options) return options;
   if (request.method !== "GET") return json({ error: "method_not_allowed" }, 405);
   try {
-    const { client } = await authenticatedClient(request);
-    await enforceRateLimit(client, "medication-summary");
+    const { client, user, authKind } = await authenticatedClient(request);
+    await enforceRateLimit(client, "medication-summary", user.id, authKind);
     const range = dateRange(request, 366);
     const { data, error } = await client.from("dose_logs")
       .select("scheduled_at,taken_at,medication_name,dose,status")
+      .eq("user_id", user.id)
       .gte("scheduled_at", range.start).lt("scheduled_at", range.endExclusive)
       .order("scheduled_at");
     if (error) throw new Error("query_failed");

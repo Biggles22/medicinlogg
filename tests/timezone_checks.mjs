@@ -17,4 +17,6 @@ assert.equal(timestamp("2026-01-15", "08:00"), "2026-01-15T07:00:00.000Z", "CET 
 assert.equal(timestamp("2026-07-15", "08:00"), "2026-07-15T06:00:00.000Z", "CEST conversion");
 assert.equal(timestamp("2026-03-29", "01:30"), "2026-03-29T00:30:00.000Z", "before DST switch");
 assert.equal(timestamp("2026-03-29", "03:30"), "2026-03-29T01:30:00.000Z", "after DST switch");
+assert.equal(timestamp("2026-10-25", "01:30"), "2026-10-24T23:30:00.000Z", "before autumn DST switch");
+assert.equal(timestamp("2026-10-25", "03:30"), "2026-10-25T02:30:00.000Z", "after autumn DST switch");
 console.log("Timezone checks passed");

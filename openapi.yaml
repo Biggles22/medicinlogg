@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Medicinkoll read-only API
   version: 1.0.0
-  description: Read-only access to the authenticated user's Medicinkoll logs. It cannot change medication data or schedules.
+  description: Read-only access through the Medicinkoll OAuth bridge. It cannot change medication data or schedules.
 servers:
   - url: https://lurznugdkxnpnkmybjad.supabase.co/functions/v1
 security:
@@ -64,8 +64,8 @@ components:
       type: oauth2
       flows:
         authorizationCode:
-          authorizationUrl: https://lurznugdkxnpnkmybjad.supabase.co/auth/v1/oauth/authorize
-          tokenUrl: https://lurznugdkxnpnkmybjad.supabase.co/auth/v1/oauth/token
+          authorizationUrl: https://lurznugdkxnpnkmybjad.supabase.co/functions/v1/oauth-authorize
+          tokenUrl: https://lurznugdkxnpnkmybjad.supabase.co/functions/v1/oauth-token
           scopes:
             openid: Authenticate the user
             email: Identify the user's own Medicinkoll account server-side

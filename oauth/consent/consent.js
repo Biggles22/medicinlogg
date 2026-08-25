@@ -4,7 +4,7 @@
   const allow = document.querySelector("#allow");
   const deny = document.querySelector("#deny");
   const config = window.MEDICINKOLL_CONFIG || {};
-  const authorizationId = new URLSearchParams(location.search).get("authorization_id");
+  const authorizationId = new URLSearchParams(location.search).get("bridge_authorization_id");
   let session;
   try { session = JSON.parse(localStorage.getItem("medicinlogg.session.v1")); } catch (_) { session = null; }
 
@@ -15,7 +15,7 @@
     deny.disabled = true;
   }
 
-  if (!authorizationId) return fail("Auktoriserings-ID saknas. Starta anslutningen igen från PS Medicinkoll.");
+  if (!authorizationId?.startsWith("mk_auth_")) return fail("Auktoriserings-ID saknas. Starta anslutningen igen från PS Medicinkoll.");
   if (!config.supabaseUrl || !config.supabaseAnonKey) return fail("Medicinkoll är inte konfigurerad för molnanslutning.");
   if (!session?.access_token) {
     const next = location.pathname + location.search;
@@ -28,10 +28,10 @@
     Authorization: `Bearer ${session.access_token}`,
     "Content-Type": "application/json",
   };
-  const endpoint = `${config.supabaseUrl}/auth/v1/oauth/authorizations/${encodeURIComponent(authorizationId)}`;
+  const endpoint = `${config.supabaseUrl}/functions/v1/oauth-consent`;
   let details;
   try {
-    const response = await fetch(endpoint, { headers });
+    const response = await fetch(`${endpoint}?authorization_id=${encodeURIComponent(authorizationId)}`, { headers });
     if (response.status === 401) {
       localStorage.removeItem("medicinlogg.session.v1");
       location.replace(`../../?next=${encodeURIComponent(location.pathname + location.search)}`);
@@ -39,10 +39,6 @@
     }
     if (!response.ok) throw new Error("invalid_authorization");
     details = await response.json();
-    if (details.redirect_url && !details.authorization_id) {
-      location.assign(details.redirect_url);
-      return;
-    }
   } catch (_) {
     return fail("Auktoriseringsförfrågan är ogiltig eller har löpt ut.");
   }
@@ -59,7 +55,7 @@
     deny.disabled = true;
     status.textContent = action === "approve" ? "Godkänner…" : "Avbryter…";
     try {
-      const response = await fetch(`${endpoint}/consent`, { method: "POST", headers, body: JSON.stringify({ action }) });
+      const response = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify({ authorization_id: authorizationId, action }) });
       const result = await response.json();
       if (!response.ok || !result.redirect_url) throw new Error("decision_failed");
       location.assign(result.redirect_url);

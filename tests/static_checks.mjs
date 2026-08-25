@@ -6,6 +6,8 @@ const paths = openapi.split("components:")[0];
 assert.match(paths, /operationId: getMedicationContext/);
 assert.match(paths, /operationId: getMedicationSummary/);
 assert.match(paths, /operationId: getCurrentMedications/);
+assert.match(openapi, /functions\/v1\/oauth-authorize/);
+assert.match(openapi, /functions\/v1\/oauth-token/);
 assert.doesNotMatch(paths, /^\s{4}(post|put|patch|delete):/m, "GPT Action must expose GET only");
 
 const clientFiles = ["index.html", "cloud-sync.js", "config.js"].map((file) => readFileSync(file, "utf8")).join("\n");
