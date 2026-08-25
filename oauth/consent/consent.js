@@ -19,6 +19,7 @@
   if (!config.supabaseUrl || !config.supabaseAnonKey) return fail("Medicinkoll är inte konfigurerad för molnanslutning.");
   if (!session?.access_token) {
     const next = location.pathname + location.search;
+    localStorage.setItem("medicinlogg.oauth.next.v1", next);
     location.replace(`../../?next=${encodeURIComponent(next)}`);
     return;
   }
@@ -58,6 +59,7 @@
       const response = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify({ authorization_id: authorizationId, action }) });
       const result = await response.json();
       if (!response.ok || !result.redirect_url) throw new Error("decision_failed");
+      localStorage.removeItem("medicinlogg.oauth.next.v1");
       location.assign(result.redirect_url);
     } catch (_) {
       fail("Beslutet kunde inte sparas. Starta anslutningen igen.");

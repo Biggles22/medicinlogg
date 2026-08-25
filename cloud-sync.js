@@ -217,11 +217,12 @@
       } else session = null;
     }
     renderStatus();
-    const next = new URLSearchParams(location.search).get("next");
+    const next = new URLSearchParams(location.search).get("next") || localStorage.getItem("medicinlogg.oauth.next.v1");
     if (session && next) {
       const destination = new URL(next, location.origin);
       const appBase = new URL("./", location.origin + location.pathname).pathname;
       if (destination.origin === location.origin && destination.pathname.startsWith(appBase)) {
+        localStorage.removeItem("medicinlogg.oauth.next.v1");
         location.replace(destination.pathname + destination.search);
         return;
       }

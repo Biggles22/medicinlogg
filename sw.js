@@ -1,4 +1,4 @@
-const cacheName = "medicinlogg-v15";
+const cacheName = "medicinlogg-v16";
 const filesToCache = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./config.js", "./cloud-sync.js", "./privacy/", "./oauth/consent/", "./oauth/consent/consent.js"];
 
 self.addEventListener("install", (event) => {
@@ -32,11 +32,11 @@ self.addEventListener("fetch", (event) => {
         .then((response) => {
           if (response.ok) {
             const copy = response.clone();
-            caches.open(cacheName).then((cache) => cache.put("./index.html", copy));
+            caches.open(cacheName).then((cache) => cache.put(event.request, copy));
           }
           return response;
         })
-        .catch(() => caches.match("./index.html"))
+        .catch(async () => (await caches.match(event.request)) || caches.match("./index.html"))
     );
     return;
   }
