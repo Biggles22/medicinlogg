@@ -186,7 +186,7 @@
     const response = await fetch(`${config.supabaseUrl}/auth/v1/otp`, {
       method: "POST",
       headers: { apikey: config.supabaseAnonKey, "Content-Type": "application/json" },
-      body: JSON.stringify({ email, create_user: true, options: { email_redirect_to: location.origin + location.pathname + location.search } }),
+      body: JSON.stringify({ email, create_user: true, email_redirect_to: location.origin + location.pathname + location.search }),
     });
     if (!response.ok) throw new Error("sign_in_failed");
   }

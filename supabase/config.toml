@@ -1,7 +1,7 @@
 project_id = "medicinkoll"
 
 [auth]
-site_url = "https://biggles22.github.io/medicinlogg"
+site_url = "https://biggles22.github.io/medicinlogg/"
 additional_redirect_urls = [
   "https://biggles22.github.io/medicinlogg/",
   "https://biggles22.github.io/medicinlogg/oauth/consent/",
