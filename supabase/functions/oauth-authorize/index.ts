@@ -17,7 +17,7 @@ Deno.serve(async (request) => {
 
     const authorizationId = randomToken("mk_auth_");
     const admin = adminClient();
-    const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
+    const expiresAt = new Date(Date.now() + 30 * 60_000).toISOString();
     const { error } = await admin.from("gpt_oauth_requests").insert({
       authorization_id_hash: await sha256(authorizationId), client_id: clientId,
       redirect_uri: redirectUri, state, scope: requestedScopes.join(" "), expires_at: expiresAt,
