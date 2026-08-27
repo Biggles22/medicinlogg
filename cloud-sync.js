@@ -77,7 +77,11 @@
       localStorage.removeItem(sessionStorageKey());
       renderStatus();
     }
-    if (!response.ok) throw new Error(`request_failed_${response.status}`);
+    if (!response.ok) {
+      const body = await response.clone().json().catch(() => ({}));
+      const detail = body.message || body.msg || body.error_description || body.error || "okänt fel";
+      throw new Error(`HTTP ${response.status}: ${detail}`);
+    }
     return response.status === 204 ? null : response.json();
   }
 
@@ -355,8 +359,13 @@
     if (!configured) root.textContent = "Molnsynk ej konfigurerad";
     else if (!session) root.textContent = "Inte inloggad";
     else if (custom) root.textContent = custom;
+    else if (syncState.lastError) {
+      root.textContent = navigator.onLine ? `Synkfel: ${syncState.lastError}` : "Offline – sparat lokalt";
+      root.title = syncState.lastError;
+    }
     else if (syncState.pending) root.textContent = navigator.onLine ? "Väntar på synk" : "Offline – sparat lokalt";
     else root.textContent = "Synkad";
+    if (!syncState.lastError) root.removeAttribute("title");
     document.querySelector("#cloudSignOutBtn")?.classList.toggle("hidden", !session);
     document.querySelector("#cloudSignInForm")?.classList.toggle("hidden", Boolean(session));
     const deleteButton = document.querySelector("#deleteCloudAccountBtn");

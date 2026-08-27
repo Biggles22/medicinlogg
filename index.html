@@ -1257,7 +1257,7 @@
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <script src="./config.js"></script>
-    <script src="./cloud-sync.js?v=22"></script>
+    <script src="./cloud-sync.js?v=23"></script>
     <script>
       const storageKey = "medicinlogg.v2";
       const oldStorageKey = "medicinlogg.v1";
@@ -2869,7 +2869,7 @@
           window.location.reload();
         });
         navigator.serviceWorker
-          .register("./sw.js?v=22", { updateViaCache: "none" })
+          .register("./sw.js?v=23", { updateViaCache: "none" })
           .then((registration) => registration.update())
           .catch(() => {});
       }
