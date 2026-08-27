@@ -303,7 +303,7 @@
 
   async function verifyLoginCode(email, token) {
     if (!configured) throw new Error("missing_configuration");
-    if (!/^\d{6}$/.test(token)) throw new Error("Koden ska bestå av sex siffror");
+    if (!/^\d{6,8}$/.test(token)) throw new Error("Koden ska bestå av 6–8 siffror");
     const response = await fetch(`${config.supabaseUrl}/auth/v1/verify`, {
       method: "POST",
       headers: { apikey: config.supabaseAnonKey, "Content-Type": "application/json" },

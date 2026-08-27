@@ -1,7 +1,7 @@
-importScripts("./version.js?v=26");
+importScripts("./version.js?v=27");
 
 const cacheName = `medicinlogg-v${globalThis.MEDICINKOLL_VERSION}`;
-const filesToCache = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./version.js?v=26", "./config.js?v=26", "./cloud-sync.js?v=26", "./push-notifications.js?v=26", "./privacy/", "./oauth/consent/", "./oauth/consent/consent.js?v=20"];
+const filesToCache = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./version.js?v=27", "./config.js?v=27", "./cloud-sync.js?v=27", "./push-notifications.js?v=27", "./privacy/", "./oauth/consent/", "./oauth/consent/consent.js?v=20"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(cacheName).then((cache) => cache.addAll(filesToCache)));
