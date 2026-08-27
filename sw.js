@@ -1,5 +1,5 @@
-const cacheName = "medicinlogg-v23";
-const filesToCache = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./config.js?v=20", "./cloud-sync.js?v=23", "./privacy/", "./oauth/consent/", "./oauth/consent/consent.js?v=20"];
+const cacheName = "medicinlogg-v24";
+const filesToCache = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./config.js?v=24", "./cloud-sync.js?v=24", "./push-notifications.js?v=24", "./privacy/", "./oauth/consent/", "./oauth/consent/consent.js?v=20"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(cacheName).then((cache) => cache.addAll(filesToCache)));
@@ -42,4 +42,34 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request)));
+});
+
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try { payload = event.data?.json() || {}; } catch (_) { payload = {}; }
+  const title = typeof payload.title === "string" ? payload.title : "Medicinkoll";
+  const body = typeof payload.body === "string" ? payload.body : "Planerad medicinering om 5 minuter.";
+  event.waitUntil(self.registration.showNotification(title, {
+    body,
+    icon: "./icon.svg",
+    badge: "./icon.svg",
+    tag: "medicinlogg-planned-dose",
+    renotify: false,
+    data: { url: typeof payload.url === "string" ? payload.url : "./" },
+  }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const target = new URL(event.notification.data?.url || "./", self.location.origin).href;
+    const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const client of windows) {
+      if (new URL(client.url).origin === self.location.origin) {
+        await client.navigate(target);
+        return client.focus();
+      }
+    }
+    return self.clients.openWindow(target);
+  })());
 });

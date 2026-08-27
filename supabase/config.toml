@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.oauth-revoke]
 verify_jwt = false
+
+[functions.dispatch-medication-reminders]
+verify_jwt = false

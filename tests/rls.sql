@@ -1,5 +1,5 @@
 begin;
-select plan(8);
+select plan(14);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -16,12 +16,24 @@ values
   ('00000000-0000-0000-0000-00000000000a', 'a-observation', '2026-08-24T10:00:00+02:00', 'A text'),
   ('00000000-0000-0000-0000-00000000000b', 'b-observation', '2026-08-24T10:00:00+02:00', 'B text');
 
+insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+values
+  ('00000000-0000-0000-0000-00000000000a', 'https://push.example.test/a-device', 'a-p256dh-synthetic-key', 'a-auth-synthetic'),
+  ('00000000-0000-0000-0000-00000000000b', 'https://push.example.test/b-device', 'b-p256dh-synthetic-key', 'b-auth-synthetic');
+insert into public.notification_preferences (user_id, enabled)
+values
+  ('00000000-0000-0000-0000-00000000000a', true),
+  ('00000000-0000-0000-0000-00000000000b', true);
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', true);
 select is((select count(*)::integer from public.dose_logs), 1, 'A sees exactly one own dose');
 select is((select count(*)::integer from public.dose_logs where client_record_id = 'b-dose'), 0, 'A cannot read B dose');
 select is((select count(*)::integer from public.observations), 1, 'A sees exactly one own observation');
 select is((select count(*)::integer from public.observations where client_record_id = 'b-observation'), 0, 'A cannot read B observation');
+select is((select count(*)::integer from public.push_subscriptions), 1, 'A sees exactly one own push subscription');
+select is((select count(*)::integer from public.push_subscriptions where endpoint like '%b-device'), 0, 'A cannot read B push subscription');
+select is((select count(*)::integer from public.notification_preferences), 1, 'A sees exactly one own notification preference');
 
 reset role;
 set local role authenticated;
@@ -30,6 +42,9 @@ select is((select count(*)::integer from public.dose_logs), 1, 'B sees exactly o
 select is((select count(*)::integer from public.dose_logs where client_record_id = 'a-dose'), 0, 'B cannot read A dose');
 select is((select count(*)::integer from public.observations), 1, 'B sees exactly one own observation');
 select is((select count(*)::integer from public.observations where client_record_id = 'a-observation'), 0, 'B cannot read A observation');
+select is((select count(*)::integer from public.push_subscriptions), 1, 'B sees exactly one own push subscription');
+select is((select count(*)::integer from public.push_subscriptions where endpoint like '%a-device'), 0, 'B cannot read A push subscription');
+select is((select count(*)::integer from public.notification_preferences), 1, 'B sees exactly one own notification preference');
 
 select * from finish();
 rollback;

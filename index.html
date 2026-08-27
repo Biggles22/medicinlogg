@@ -1233,6 +1233,21 @@
             </div>
           </section>
           <section class="panel">
+            <div class="panel-header">
+              <h3>Medicinpåminnelser</h3>
+              <span class="pill" id="pushStatus">Kontrollerar…</span>
+            </div>
+            <div class="panel-body">
+              <p><strong>Påminnelse 5 minuter före planerad dos.</strong> Påminnelsen följer alltid den planerade tiden och flyttas aldrig utifrån ett faktiskt intag.</p>
+              <p id="nextReminderDose">Kontrollerar nästa planerade dos…</p>
+              <div class="toolbar">
+                <button class="btn primary" id="enablePushBtn" type="button">Aktivera påminnelser</button>
+                <button class="btn" id="disablePushBtn" type="button">Stäng av påminnelser</button>
+              </div>
+              <p><small>Pushnotiser påverkas av operativsystemets inställningar, internetanslutning och strömsparfunktioner. Använd dem inte som enda säkerhetsmekanism för medicinering.</small></p>
+            </div>
+          </section>
+          <section class="panel">
             <div class="panel-header"><h3>Kopplade tjänster</h3></div>
             <div class="panel-body">
               <p><strong>PS Medicinkoll</strong> kan efter separat OAuth-godkännande läsa loggar och observationer. Tjänsten kan aldrig skriva eller ändra data via GPT Action.</p>
@@ -1257,7 +1272,8 @@
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <script src="./config.js"></script>
-    <script src="./cloud-sync.js?v=23"></script>
+    <script src="./cloud-sync.js?v=24"></script>
+    <script src="./push-notifications.js?v=24"></script>
     <script>
       const storageKey = "medicinlogg.v2";
       const oldStorageKey = "medicinlogg.v1";
@@ -2869,7 +2885,7 @@
           window.location.reload();
         });
         navigator.serviceWorker
-          .register("./sw.js?v=23", { updateViaCache: "none" })
+          .register("./sw.js?v=24", { updateViaCache: "none" })
           .then((registration) => registration.update())
           .catch(() => {});
       }

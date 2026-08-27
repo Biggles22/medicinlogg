@@ -29,6 +29,52 @@ Du kan ändra mallen i fliken **Standarddag**. På fliken **Dag** kan du skapa d
 
 Appens gränssnitt cachas lokalt efter första besöket och kan därefter öppnas utan internetanslutning.
 
+## Medicinpåminnelser med Web Push
+
+Påminnelser är avstängda som standard. En inloggad användare aktiverar dem under **Inställningar → Medicinpåminnelser**. Webbläsarens notistillstånd efterfrågas endast efter knapptryckningen. På iPhone och iPad krävs att PWA:n är installerad på hemskärmen och öppnas där.
+
+Servern utgår uteslutande från `dose_logs.scheduled_at`. För en planerad slot beräknas `reminder_at = scheduled_at - 5 minuter`. Faktisk intagstid flyttar aldrig nästa tid eller något schema. Alla medicinrader med samma användare och `scheduled_at` behandlas som en planerad slot, vilket förhindrar flera notiser för läkemedel som hör till samma tillfälle. Standardtexten innehåller varken läkemedelsnamn eller dos.
+
+Arkitekturen består av:
+
+- `push_subscriptions`: flera isolerade enheter per användare
+- `notification_preferences`: avstängd som standard, fem minuter före dos
+- `notification_deliveries`: server-only och idempotent outbox per slot och subscription
+- `dispatch-medication-reminders`: cron-skyddad Edge Function som atomiskt claimar och skickar Web Push
+- Supabase Cron/`pg_cron`: anropar funktionen varje minut med en hemlighet från Vault
+
+Permanenta pushfel (`404`/`410`) inaktiverar endast den berörda enheten. Tillfälliga fel köas för retry, men ingen notis skickas efter den planerade dosens tid. Push kan fördröjas eller utebli på grund av operativsystem, internet eller strömsparläge och ska inte vara den enda säkerhetsmekanismen för medicinering.
+
+### Push-konfiguration
+
+Publik klientkonfiguration:
+
+- `vapidPublicKey` i `config.js` (publik VAPID-nyckel)
+
+Serverhemligheter i Supabase Edge Function Secrets, endast namn:
+
+- `VAPID_PUBLIC_KEY`
+- `VAPID_PRIVATE_KEY`
+- `VAPID_SUBJECT`
+- `REMINDER_CRON_SECRET`
+
+`VAPID_PRIVATE_KEY` och `REMINDER_CRON_SECRET` får aldrig läggas i klientkod eller Git. Kör migrationerna och driftsätt funktionen:
+
+```sh
+supabase db push
+supabase functions deploy dispatch-medication-reminders --no-verify-jwt
+```
+
+Cron aktiveras idempotent genom den service-role-begränsade RPC-funktionen `configure_medication_reminder_cron(function_url, cron_secret)`. Samma hemlighet ska finnas som `REMINDER_CRON_SECRET` i Edge Functions; RPC:n lagrar cron-kopian krypterat i Supabase Vault. Kontrollera jobbet `dispatch-medication-reminders` och dess körningar under **Integrations → Cron** i Supabase Dashboard.
+
+Felsökning:
+
+- Om Push API saknas på iPhone: öppna den installerade hemskärmsappen, inte en vanlig browserflik.
+- Om tillståndet är nekat: aktivera notiser för Medicinkoll i operativsystemets inställningar.
+- Vid utloggning inaktiveras endast den aktuella enhetens subscription; andra inloggade enheter påverkas inte.
+- **Stäng av påminnelser** stänger av preferensen för hela kontot och avregistrerar den aktuella enheten.
+- Kontrollera Edge Function-loggar utan att logga endpoint, kryptonycklar eller medicinsk data.
+
 ## Säker molnsynk och PS Medicinkoll
 
 Projektet innehåller nu en Supabase-backend som kan driftsättas separat. PWA:n sparar fortfarande först i `localStorage`, köar ändringar och synkroniserar i båda riktningarna vid nätanslutning, appstart och när appen blir aktiv. Stabilt lokalt ID används som `client_record_id`, den senast ändrade versionen vinner vid konflikt och tombstones hindrar offline-enheter från att återuppliva raderade poster.
@@ -66,6 +112,6 @@ Bryggan behövs eftersom GPT Actions OAuth-flöde inte skickar PKCE-parametrarna
 
 ### Kontroller
 
-Kör `node tests/static_checks.mjs`, `node tests/timezone_checks.mjs` och `node tests/sync_merge_checks.mjs`. Databastestet kontrollerar uttryckligen att användare A inte kan läsa användare B:s doser eller observationer. `tests/remote_qa.mjs` verifierar även idempotens och att en gammal enhet inte kan återuppliva en raderad post. `tests/bridge_qa.mjs` kör ett fullständigt syntetiskt OAuth-flöde mot det länkade testprojektet och kräver att bridge-hemligheten tillförs enbart som processmiljö.
+Kör `node tests/static_checks.mjs`, `node tests/timezone_checks.mjs`, `node tests/sync_merge_checks.mjs` och `node tests/push_frontend_checks.mjs`. Databastestet kontrollerar uttryckligen tvåanvändarisolering. `tests/remote_qa.mjs` verifierar synkidempotens och att en gammal enhet inte kan återuppliva en raderad post. `node tests/push_qa.mjs <project-ref>` använder endast syntetiska uppgifter och verifierar reminder-tid, två användare, två enheter, dubbel cron, duplicerade schemarader, permanent inaktivering och tillfällig retry. `tests/bridge_qa.mjs` kör ett fullständigt syntetiskt OAuth-flöde och kräver att bridge-hemligheten tillförs enbart som processmiljö.
 
 Före produktion återstår dessutom verifiering av två riktiga testkonton, offline/online-scenariot med exakt tre poster, OAuth-återkallning, konto- och backuppruning samt ett datumintervall över CET/CEST-skifte.

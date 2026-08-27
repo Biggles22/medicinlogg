@@ -269,6 +269,7 @@
     syncState.pending = true;
     saveSyncState();
     sync();
+    window.dispatchEvent(new CustomEvent("medicinkoll:session-ready"));
   }
 
   function queueDelete(type, id) {
@@ -333,6 +334,7 @@
   }
 
   async function signOut() {
+    await window.medicinkollPush?.disableCurrentSubscription(false).catch(() => {});
     if (session) await fetch(`${config.supabaseUrl}/auth/v1/logout`, { method: "POST", headers: headers() }).catch(() => {});
     session = null;
     localStorage.removeItem(sessionStorageKey());
@@ -376,7 +378,7 @@
 
   window.addEventListener("online", sync);
   window.addEventListener("visibilitychange", () => { if (!document.hidden) sync(); });
-  window.medicinkollCloud = { queueSync, queueDelete, sync, signIn, signOut, deleteAccount, disconnectGpt, configured, getSession: () => session, localTimestamp };
+  window.medicinkollCloud = { queueSync, queueDelete, sync, signIn, signOut, deleteAccount, disconnectGpt, configured, getSession: () => session, localTimestamp, apiRequest: request };
   if (window.MEDICINKOLL_TEST) window.medicinkollCloudTest = { mergeById, remoteDose, remoteObservation, itemFingerprint };
   document.addEventListener("DOMContentLoaded", consumeAuthCallback);
 })();

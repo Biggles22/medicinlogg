@@ -1,7 +1,7 @@
 {
   "name": "Medicinlogg",
   "short_name": "Medicinlogg",
-  "description": "Lokal medicinlogg med standarddag och dagliga justeringar.",
+  "description": "Offline-first medicinlogg med säker synk och valfria påminnelser.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

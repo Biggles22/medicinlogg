@@ -10,8 +10,10 @@ assert.match(openapi, /functions\/v1\/oauth-authorize/);
 assert.match(openapi, /functions\/v1\/oauth-token/);
 assert.doesNotMatch(paths, /^\s{4}(post|put|patch|delete):/m, "GPT Action must expose GET only");
 
-const clientFiles = ["index.html", "cloud-sync.js", "config.js"].map((file) => readFileSync(file, "utf8")).join("\n");
+const clientFiles = ["index.html", "cloud-sync.js", "push-notifications.js", "config.js"].map((file) => readFileSync(file, "utf8")).join("\n");
 assert.doesNotMatch(clientFiles, /service_role\s*[:=]\s*["'][^"']+/i);
 assert.doesNotMatch(clientFiles, /database_password\s*[:=]\s*["'][^"']+/i);
+assert.doesNotMatch(clientFiles, /VAPID_PRIVATE_KEY|REMINDER_CRON_SECRET|GPT_OAUTH_CLIENT_SECRET/);
+assert.doesNotMatch(openapi, /push_subscriptions|notification_deliveries|dispatch-medication-reminders/, "GPT Action must not expose push administration");
 assert.match(readFileSync("supabase/migrations/202608240001_initial_schema.sql", "utf8"), /enable row level security/g);
 console.log("Static security checks passed");
