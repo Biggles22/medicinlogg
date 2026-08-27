@@ -1032,7 +1032,7 @@
           <div>
             <h1>Medicinlogg</h1>
             <p>Standarddag + justeringar</p>
-            <span class="app-version">Version <span data-app-version>25</span></span>
+            <span class="app-version">Version <span data-app-version>26</span></span>
           </div>
         </div>
 
@@ -1237,7 +1237,14 @@
                   E-post
                   <input id="cloudEmail" type="email" autocomplete="email" required placeholder="namn@example.se" />
                 </label>
-                <button class="btn primary" type="submit">Skicka inloggningslänk</button>
+                <button class="btn primary" type="submit">Skicka inloggningskod</button>
+              </form>
+              <form class="observation-form hidden" id="cloudVerifyForm">
+                <label>
+                  Engångskod från e-post
+                  <input id="cloudOtp" type="text" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required placeholder="123456" />
+                </label>
+                <button class="btn primary" type="submit">Logga in med kod</button>
               </form>
               <div class="toolbar">
                 <button class="btn hidden" id="cloudSignOutBtn" type="button">Logga ut</button>
@@ -1284,10 +1291,10 @@
     <datalist id="doseOptions"></datalist>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="./version.js?v=25"></script>
-    <script src="./config.js?v=25"></script>
-    <script src="./cloud-sync.js?v=25"></script>
-    <script src="./push-notifications.js?v=25"></script>
+    <script src="./version.js?v=26"></script>
+    <script src="./config.js?v=26"></script>
+    <script src="./cloud-sync.js?v=26"></script>
+    <script src="./push-notifications.js?v=26"></script>
     <script>
       const storageKey = "medicinlogg.v2";
       const oldStorageKey = "medicinlogg.v1";
@@ -2899,7 +2906,7 @@
           window.location.reload();
         });
         navigator.serviceWorker
-          .register("./sw.js?v=25", { updateViaCache: "none" })
+          .register("./sw.js?v=26", { updateViaCache: "none" })
           .then((registration) => registration.update())
           .catch(() => {});
       }
@@ -3042,10 +3049,26 @@
       document.querySelector("#cloudSignInForm").addEventListener("submit", async (event) => {
         event.preventDefault();
         try {
-          await window.medicinkollCloud.signIn(document.querySelector("#cloudEmail").value.trim());
-          toast("Kontrollera din e-post för inloggningslänken");
+          const email = document.querySelector("#cloudEmail").value.trim();
+          await window.medicinkollCloud.sendLoginCode(email);
+          document.querySelector("#cloudVerifyForm").classList.remove("hidden");
+          document.querySelector("#cloudOtp").focus();
+          toast("En sexsiffrig inloggningskod har skickats");
         } catch (error) {
           toast(error.message === "missing_configuration" ? "Molnsynk är inte konfigurerad" : `Inloggningen misslyckades: ${error.message}`);
+        }
+      });
+      document.querySelector("#cloudVerifyForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          await window.medicinkollCloud.verifyLoginCode(
+            document.querySelector("#cloudEmail").value.trim(),
+            document.querySelector("#cloudOtp").value.trim()
+          );
+          document.querySelector("#cloudOtp").value = "";
+          toast("Du är inloggad och synkningen startar");
+        } catch (error) {
+          toast(`Koden kunde inte verifieras: ${error.message}`);
         }
       });
       document.querySelector("#cloudSignOutBtn").addEventListener("click", async () => {

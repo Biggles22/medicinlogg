@@ -10,6 +10,7 @@
   let syncing = false;
   let retryTimer = null;
   let refreshPromise = null;
+  let loginCodeRequested = false;
   let fingerprints = stateFingerprints(readLocalState());
 
   const syncState = loadSyncState();
@@ -285,10 +286,9 @@
 
   function sessionStorageKey() { return "medicinlogg.session.v1"; }
 
-  async function signIn(email) {
+  async function sendLoginCode(email) {
     if (!configured) throw new Error("missing_configuration");
-    const redirectTo = location.origin + location.pathname + location.search;
-    const response = await fetch(`${config.supabaseUrl}/auth/v1/otp?redirect_to=${encodeURIComponent(redirectTo)}`, {
+    const response = await fetch(`${config.supabaseUrl}/auth/v1/otp`, {
       method: "POST",
       headers: { apikey: config.supabaseAnonKey, "Content-Type": "application/json" },
       body: JSON.stringify({ email, create_user: true }),
@@ -297,6 +297,35 @@
       const error = await response.json().catch(() => ({}));
       throw new Error(error.msg || error.message || "sign_in_failed");
     }
+    loginCodeRequested = true;
+    renderStatus();
+  }
+
+  async function verifyLoginCode(email, token) {
+    if (!configured) throw new Error("missing_configuration");
+    if (!/^\d{6}$/.test(token)) throw new Error("Koden ska bestå av sex siffror");
+    const response = await fetch(`${config.supabaseUrl}/auth/v1/verify`, {
+      method: "POST",
+      headers: { apikey: config.supabaseAnonKey, "Content-Type": "application/json" },
+      body: JSON.stringify({ email, token, type: "email" }),
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.msg || error.message || error.error_description || "invalid_code");
+    }
+    const verified = await response.json();
+    session = {
+      ...verified,
+      expires_at: verified.expires_at || Math.floor(Date.now() / 1000) + Number(verified.expires_in || 3600),
+    };
+    localStorage.setItem(sessionStorageKey(), JSON.stringify(session));
+    loginCodeRequested = false;
+    syncState.lastError = null;
+    syncState.pending = true;
+    saveSyncState();
+    renderStatus();
+    window.dispatchEvent(new CustomEvent("medicinkoll:session-ready"));
+    await sync();
   }
 
   async function consumeAuthCallback() {
@@ -337,6 +366,7 @@
     await window.medicinkollPush?.disableCurrentSubscription(false).catch(() => {});
     if (session) await fetch(`${config.supabaseUrl}/auth/v1/logout`, { method: "POST", headers: headers() }).catch(() => {});
     session = null;
+    loginCodeRequested = false;
     localStorage.removeItem(sessionStorageKey());
     renderStatus();
   }
@@ -370,6 +400,7 @@
     if (!syncState.lastError) root.removeAttribute("title");
     document.querySelector("#cloudSignOutBtn")?.classList.toggle("hidden", !session);
     document.querySelector("#cloudSignInForm")?.classList.toggle("hidden", Boolean(session));
+    document.querySelector("#cloudVerifyForm")?.classList.toggle("hidden", Boolean(session) || !loginCodeRequested);
     const deleteButton = document.querySelector("#deleteCloudAccountBtn");
     if (deleteButton) deleteButton.disabled = !session;
     const disconnectButton = document.querySelector("#disconnectGptBtn");
@@ -378,7 +409,7 @@
 
   window.addEventListener("online", sync);
   window.addEventListener("visibilitychange", () => { if (!document.hidden) sync(); });
-  window.medicinkollCloud = { queueSync, queueDelete, sync, signIn, signOut, deleteAccount, disconnectGpt, configured, getSession: () => session, localTimestamp, apiRequest: request };
+  window.medicinkollCloud = { queueSync, queueDelete, sync, sendLoginCode, verifyLoginCode, signOut, deleteAccount, disconnectGpt, configured, getSession: () => session, localTimestamp, apiRequest: request };
   if (window.MEDICINKOLL_TEST) window.medicinkollCloudTest = { mergeById, remoteDose, remoteObservation, itemFingerprint };
   document.addEventListener("DOMContentLoaded", consumeAuthCallback);
 })();

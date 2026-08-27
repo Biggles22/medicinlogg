@@ -79,6 +79,17 @@ Felsökning:
 
 Projektet innehåller nu en Supabase-backend som kan driftsättas separat. PWA:n sparar fortfarande först i `localStorage`, köar ändringar och synkroniserar i båda riktningarna vid nätanslutning, appstart och när appen blir aktiv. Stabilt lokalt ID används som `client_record_id`, den senast ändrade versionen vinner vid konflikt och tombstones hindrar offline-enheter från att återuppliva raderade poster.
 
+### E-postkod för inloggning
+
+För att kodinloggningen ska fungera i iPhone-hemskärmsappen ska Supabase-mallen **Authentication → Email Templates → Magic Link** visa engångskoden. Använd `{{ .Token }}` i stället för en klickbar `{{ .ConfirmationURL }}`. Exempel:
+
+```html
+<h2>Din inloggningskod för Medicinlogg</h2>
+<p>Skriv in denna kod i appen:</p>
+<p style="font-size: 28px; font-weight: bold; letter-spacing: 4px;">{{ .Token }}</p>
+<p>Koden är personlig och ska inte delas med någon.</p>
+```
+
 GPT-ytan definieras i `openapi.yaml` och innehåller endast tre GET-operationer:
 
 - `medication-context` för högst 31 dagars detaljdata (sju dagar som standard)
