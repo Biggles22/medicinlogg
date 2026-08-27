@@ -9,6 +9,8 @@
   let session = null;
   let syncing = false;
   let retryTimer = null;
+  let refreshPromise = null;
+  let fingerprints = stateFingerprints(readLocalState());
 
   const syncState = loadSyncState();
 
@@ -25,6 +27,23 @@
     renderStatus();
   }
 
+  function readLocalState() {
+    try { return JSON.parse(localStorage.getItem(stateKey) || "{}"); } catch (_) { return {}; }
+  }
+
+  function itemFingerprint(item) {
+    const { createdAt, updatedAt, ...content } = item;
+    void createdAt; void updatedAt;
+    return JSON.stringify(content);
+  }
+
+  function stateFingerprints(rawState) {
+    return new Map([
+      ...(rawState.entries || []).map((item) => [`dose:${item.id}`, itemFingerprint(item)]),
+      ...(rawState.observations || []).map((item) => [`observation:${item.id}`, itemFingerprint(item)]),
+    ]);
+  }
+
   function headers(extra) {
     return {
       apikey: config.supabaseAnonKey,
@@ -34,15 +53,43 @@
     };
   }
 
-  async function request(path, options) {
+  async function refreshSession() {
+    if (!session?.refresh_token) return false;
+    if (!refreshPromise) refreshPromise = (async () => {
+      const response = await fetch(`${config.supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
+        method: "POST", headers: { apikey: config.supabaseAnonKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: session.refresh_token }),
+      });
+      if (!response.ok) return false;
+      const refreshed = await response.json();
+      session = { ...refreshed, expires_at: Math.floor(Date.now() / 1000) + refreshed.expires_in };
+      localStorage.setItem(sessionStorageKey(), JSON.stringify(session));
+      return true;
+    })().finally(() => { refreshPromise = null; });
+    return refreshPromise;
+  }
+
+  async function request(path, options, retried = false) {
     const response = await fetch(`${config.supabaseUrl}${path}`, { ...options, headers: headers(options?.headers) });
+    if (response.status === 401 && !retried && await refreshSession()) return request(path, options, true);
     if (response.status === 401) {
       session = null;
-      localStorage.removeItem("medicinlogg.session.v1");
+      localStorage.removeItem(sessionStorageKey());
       renderStatus();
     }
     if (!response.ok) throw new Error(`request_failed_${response.status}`);
     return response.status === 204 ? null : response.json();
+  }
+
+  async function requestAll(path) {
+    const pageSize = 1000;
+    const rows = [];
+    for (let offset = 0; ; offset += pageSize) {
+      const separator = path.includes("?") ? "&" : "?";
+      const page = await request(`${path}${separator}limit=${pageSize}&offset=${offset}`, { method: "GET" });
+      rows.push(...page);
+      if (page.length < pageSize) return rows;
+    }
   }
 
   function localTimestamp(date, time) {
@@ -63,6 +110,46 @@
     const value = new Date(guess);
     if (Number.isNaN(value.getTime())) throw new Error("invalid_local_timestamp");
     return value.toISOString();
+  }
+
+  function localParts(timestamp) {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat("sv-SE", {
+      timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+    }).formatToParts(new Date(timestamp)).map((part) => [part.type, part.value]));
+    return { date: `${parts.year}-${parts.month}-${parts.day}`, time: `${parts.hour}:${parts.minute}` };
+  }
+
+  function remoteDose(row) {
+    const scheduled = localParts(row.scheduled_at);
+    const taken = row.taken_at ? localParts(row.taken_at) : null;
+    return {
+      id: row.client_record_id, date: scheduled.date, time: scheduled.time,
+      medicine: row.medication_name, dose: row.dose || "", status: row.status,
+      note: row.note || "", order: row.display_order || 0, ...(taken ? { takenTime: taken.time } : {}),
+      createdAt: row.source_created_at || row.created_at,
+      updatedAt: row.source_updated_at || row.updated_at,
+    };
+  }
+
+  function remoteObservation(row) {
+    const observed = localParts(row.observed_at);
+    return {
+      id: row.client_record_id, date: observed.date, time: observed.time,
+      text: row.text, category: row.category || null, severity: row.severity,
+      createdAt: row.source_created_at || row.created_at,
+      updatedAt: row.source_updated_at || row.updated_at,
+    };
+  }
+
+  function mergeById(localItems, remoteItems, deletedIds) {
+    const merged = new Map(localItems.map((item) => [item.id, item]));
+    for (const item of remoteItems) {
+      const local = merged.get(item.id);
+      if (!local || Date.parse(item.updatedAt || 0) >= Date.parse(local.updatedAt || 0)) merged.set(item.id, item);
+    }
+    for (const id of deletedIds) merged.delete(id);
+    return [...merged.values()];
   }
 
   function normalizeState(rawState) {
@@ -89,6 +176,7 @@
         dose: entry.dose || "",
         status: entry.status,
         note: entry.note || null,
+        display_order: entry.order || 0,
         source_created_at: entry.createdAt,
         source_updated_at: entry.updatedAt,
       })),
@@ -110,13 +198,20 @@
     syncing = true;
     renderStatus("Synkar…");
     try {
-      const state = JSON.parse(localStorage.getItem(stateKey) || "{}");
+      const state = readLocalState();
       const data = payloads(state);
-      for (const id of syncState.deletedDoses || []) {
-        await request(`/rest/v1/dose_logs?client_record_id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
-      }
-      for (const id of syncState.deletedObservations || []) {
-        await request(`/rest/v1/observations?client_record_id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+      const deletions = [
+        ...(syncState.deletedDoses || []).map((item) => ({
+          record_type: "dose", client_record_id: typeof item === "string" ? item : item.id,
+          deleted_at: typeof item === "string" ? new Date().toISOString() : item.deletedAt,
+        })),
+        ...(syncState.deletedObservations || []).map((item) => ({
+          record_type: "observation", client_record_id: typeof item === "string" ? item : item.id,
+          deleted_at: typeof item === "string" ? new Date().toISOString() : item.deletedAt,
+        })),
+      ];
+      if (deletions.length) {
+        await request("/rest/v1/rpc/sync_deletions", { method: "POST", body: JSON.stringify({ records: deletions }) });
       }
       for (let offset = 0; offset < data.doses.length; offset += 100) {
         await request("/rest/v1/rpc/sync_dose_logs", { method: "POST", body: JSON.stringify({ records: data.doses.slice(offset, offset + 100) }) });
@@ -124,23 +219,19 @@
       for (let offset = 0; offset < data.observations.length; offset += 100) {
         await request("/rest/v1/rpc/sync_observations", { method: "POST", body: JSON.stringify({ records: data.observations.slice(offset, offset + 100) }) });
       }
-      const [doseCount, observationCount] = await Promise.all([
-        request("/rest/v1/dose_logs?select=id", { method: "GET", headers: { Prefer: "count=exact", Range: "0-0" } }),
-        request("/rest/v1/observations?select=id", { method: "GET", headers: { Prefer: "count=exact", Range: "0-0" } }),
+      const [remoteDoses, remoteObservations, remoteDeletions] = await Promise.all([
+        requestAll("/rest/v1/dose_logs?select=client_record_id,scheduled_at,taken_at,medication_name,dose,status,note,display_order,source_created_at,source_updated_at,created_at,updated_at"),
+        requestAll("/rest/v1/observations?select=client_record_id,observed_at,text,category,severity,source_created_at,source_updated_at,created_at,updated_at"),
+        requestAll("/rest/v1/deleted_records?select=record_type,client_record_id,deleted_at"),
       ]);
-      // Queries above also prove that the JWT/RLS path works. Exact migration
-      // verification is performed by matching stable client IDs on first sync.
-      if (!syncState.migrated) {
-        const [doseIds, observationIds] = await Promise.all([
-          request("/rest/v1/dose_logs?select=client_record_id", { method: "GET" }),
-          request("/rest/v1/observations?select=client_record_id", { method: "GET" }),
-        ]);
-        const doseSet = new Set(doseIds.map((row) => row.client_record_id));
-        const observationSet = new Set(observationIds.map((row) => row.client_record_id));
-        syncState.migrated = data.doses.every((row) => doseSet.has(row.client_record_id))
-          && data.observations.every((row) => observationSet.has(row.client_record_id));
-      }
-      void doseCount; void observationCount;
+      const deletedDoseIds = new Set(remoteDeletions.filter((row) => row.record_type === "dose").map((row) => row.client_record_id));
+      const deletedObservationIds = new Set(remoteDeletions.filter((row) => row.record_type === "observation").map((row) => row.client_record_id));
+      state.entries = mergeById(state.entries || [], remoteDoses.map(remoteDose), deletedDoseIds);
+      state.observations = mergeById(state.observations || [], remoteObservations.map(remoteObservation), deletedObservationIds);
+      localStorage.setItem(stateKey, JSON.stringify(state));
+      fingerprints = stateFingerprints(state);
+      window.dispatchEvent(new CustomEvent("medicinkoll:state-synced", { detail: state }));
+      syncState.migrated = true;
       syncState.pending = false;
       syncState.deletedDoses = [];
       syncState.deletedObservations = [];
@@ -161,8 +252,14 @@
 
   function queueSync(rawState) {
     const now = new Date().toISOString();
-    for (const item of [...(rawState.entries || []), ...(rawState.observations || [])]) {
-      item.updatedAt = now;
+    for (const [type, items] of [["dose", rawState.entries || []], ["observation", rawState.observations || []]]) {
+      for (const item of items) {
+        const key = `${type}:${item.id}`;
+        const fingerprint = itemFingerprint(item);
+        if (!item.createdAt) item.createdAt = now;
+        if (!item.updatedAt || fingerprints.get(key) !== fingerprint) item.updatedAt = now;
+        fingerprints.set(key, fingerprint);
+      }
     }
     localStorage.setItem(stateKey, JSON.stringify(rawState));
     syncState.pending = true;
@@ -172,7 +269,9 @@
 
   function queueDelete(type, id) {
     const key = type === "dose" ? "deletedDoses" : "deletedObservations";
-    syncState[key] = [...new Set([...(syncState[key] || []), id])];
+    const existing = (syncState[key] || []).filter((item) => (typeof item === "string" ? item : item.id) !== id);
+    syncState[key] = [...existing, { id, deletedAt: new Date().toISOString() }];
+    fingerprints.delete(`${type}:${id}`);
     syncState.pending = true;
     saveSyncState();
     // The caller removes the item locally and then calls queueSync(). Starting
@@ -210,15 +309,10 @@
       try { session = JSON.parse(localStorage.getItem(sessionStorageKey())); } catch (_) { session = null; }
     }
     if (session?.expires_at <= Math.floor(Date.now() / 1000) + 60 && session.refresh_token) {
-      const response = await fetch(`${config.supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
-        method: "POST", headers: { apikey: config.supabaseAnonKey, "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: session.refresh_token }),
-      });
-      if (response.ok) {
-        const refreshed = await response.json();
-        session = { ...refreshed, expires_at: Math.floor(Date.now() / 1000) + refreshed.expires_in };
-        localStorage.setItem(sessionStorageKey(), JSON.stringify(session));
-      } else session = null;
+      if (!await refreshSession()) {
+        session = null;
+        localStorage.removeItem(sessionStorageKey());
+      }
     }
     renderStatus();
     const next = new URLSearchParams(location.search).get("next") || localStorage.getItem("medicinlogg.oauth.next.v1");
@@ -274,5 +368,6 @@
   window.addEventListener("online", sync);
   window.addEventListener("visibilitychange", () => { if (!document.hidden) sync(); });
   window.medicinkollCloud = { queueSync, queueDelete, sync, signIn, signOut, deleteAccount, disconnectGpt, configured, getSession: () => session, localTimestamp };
+  if (window.MEDICINKOLL_TEST) window.medicinkollCloudTest = { mergeById, remoteDose, remoteObservation, itemFingerprint };
   document.addEventListener("DOMContentLoaded", consumeAuthCallback);
 })();

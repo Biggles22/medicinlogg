@@ -90,6 +90,14 @@ try {
   assert.ok(aDoses.every((row) => row.client_record_id.startsWith("qa-a-")), "A cannot read B");
   assert.ok(bDoses.every((row) => row.client_record_id.startsWith("qa-b-")), "B cannot read A");
 
+  await json(await api("/rest/v1/rpc/sync_deletions", { token: tokenB, method: "POST", body: { records: [{
+    record_type: "dose", client_record_id: "qa-b-0900", deleted_at: "2026-08-24T12:30:00Z",
+  }] } }));
+  await json(await api("/rest/v1/rpc/sync_dose_logs", { token: tokenB, method: "POST", body: { records: dosesB } }));
+  assert.equal((await json(await api("/rest/v1/dose_logs?select=client_record_id", { token: tokenB }))).length, 0, "A stale device cannot resurrect a deleted row");
+  const tombstonesB = await json(await api("/rest/v1/deleted_records?select=record_type,client_record_id", { token: tokenB }));
+  assert.deepEqual(tombstonesB, [{ record_type: "dose", client_record_id: "qa-b-0900" }]);
+
   assert.equal((await api("/functions/v1/medication-context?from=2026-08-24&to=2026-08-24")).status, 401);
   assert.equal((await api("/functions/v1/medication-context?from=2026-08-24&to=2026-08-24", { token: "invalid.synthetic.token" })).status, 401);
   const context = await json(await api("/functions/v1/medication-context?from=2026-08-24&to=2026-08-24", { token: tokenA }));

@@ -1,5 +1,5 @@
-const cacheName = "medicinlogg-v21";
-const filesToCache = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./config.js?v=20", "./cloud-sync.js?v=20", "./privacy/", "./oauth/consent/", "./oauth/consent/consent.js?v=20"];
+const cacheName = "medicinlogg-v22";
+const filesToCache = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./config.js?v=20", "./cloud-sync.js?v=22", "./privacy/", "./oauth/consent/", "./oauth/consent/consent.js?v=20"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(cacheName).then((cache) => cache.addAll(filesToCache)));

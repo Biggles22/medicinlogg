@@ -1055,13 +1055,13 @@
             </svg>
             Säkerhetskopia
           </button>
-          <label class="btn ghost" title="Återställ från säkerhetskopia">
+          <label class="btn ghost" title="Importera och sammanfoga säkerhetskopia">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 21V9" />
               <path d="m7 14 5-5 5 5" />
               <path d="M5 3h14" />
             </svg>
-            Återställ
+            Slå ihop backup
             <input class="hidden" id="importInput" type="file" accept="application/json" />
           </label>
         </div>
@@ -1218,7 +1218,7 @@
               <span class="pill" id="cloudStatus">Kontrollerar…</span>
             </div>
             <div class="panel-body">
-              <p>Loggen sparas alltid lokalt först och synkas när internet finns. Varje person ska använda ett eget konto.</p>
+              <p>Loggen sparas alltid lokalt först. När internet finns sammanfogas historiken automatiskt med samma konto på dina andra enheter.</p>
               <form class="observation-form" id="cloudSignInForm">
                 <label>
                   E-post
@@ -1257,7 +1257,7 @@
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <script src="./config.js"></script>
-    <script src="./cloud-sync.js?v=20"></script>
+    <script src="./cloud-sync.js?v=22"></script>
     <script>
       const storageKey = "medicinlogg.v2";
       const oldStorageKey = "medicinlogg.v1";
@@ -2829,13 +2829,13 @@
           try {
             const imported = JSON.parse(reader.result);
             if (imported.format !== "medicinlogg-backup" || !Array.isArray(imported.template) || !Array.isArray(imported.entries)) throw new Error("Fel format");
-            if (!confirm("Återställ säkerhetskopian? Nuvarande loggdata ersätts.")) return;
+            if (!confirm("Sammanfoga säkerhetskopian med nuvarande historik? Poster med samma ID behåller den senast ändrade versionen.")) return;
             state.template = imported.template.map(validateTemplateItem);
-            state.entries = imported.entries.map(validateEntry);
-            state.observations = Array.isArray(imported.observations) ? imported.observations.map(validateObservation) : [];
+            state.entries = mergeImportedRecords(state.entries, imported.entries.map(validateEntry));
+            state.observations = mergeImportedRecords(state.observations, Array.isArray(imported.observations) ? imported.observations.map(validateObservation) : []);
             saveState();
             render();
-            toast("Data importerad");
+            toast("Säkerhetskopian sammanfogades");
           } catch (error) {
             toast("Kunde inte importera filen");
           } finally {
@@ -2844,6 +2844,21 @@
         };
         reader.readAsText(file);
       }
+
+      function mergeImportedRecords(existing, imported) {
+        const merged = new Map(existing.map((item) => [item.id, item]));
+        imported.forEach((item) => {
+          const current = merged.get(item.id);
+          if (!current || Date.parse(item.updatedAt || item.createdAt || 0) >= Date.parse(current.updatedAt || current.createdAt || 0)) merged.set(item.id, item);
+        });
+        return [...merged.values()];
+      }
+
+      window.addEventListener("medicinkoll:state-synced", (event) => {
+        state.entries = event.detail.entries || [];
+        state.observations = event.detail.observations || [];
+        render();
+      });
 
       function registerServiceWorker() {
         if (!("serviceWorker" in navigator)) return;
@@ -2854,7 +2869,7 @@
           window.location.reload();
         });
         navigator.serviceWorker
-          .register("./sw.js?v=12", { updateViaCache: "none" })
+          .register("./sw.js?v=22", { updateViaCache: "none" })
           .then((registration) => registration.update())
           .catch(() => {});
       }

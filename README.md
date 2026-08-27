@@ -1,6 +1,6 @@
 # Medicinlogg
 
-En statisk GitHub Pages-app för daglig medicinloggning. All personlig data sparas lokalt i webbläsaren (`localStorage`) och skickas inte till GitHub.
+En offline-first GitHub Pages-app för daglig medicinloggning. Data sparas först lokalt i webbläsaren (`localStorage`) och kan synkroniseras krypterat via HTTPS till användarens Supabase-konto. Ingen loggdata skickas till GitHub.
 
 ## Publicera på GitHub Pages
 
@@ -25,13 +25,13 @@ Du kan ändra mallen i fliken **Standarddag**. På fliken **Dag** kan du skapa d
 
 ## Säkerhetskopia
 
-**Excel-rapport** skapar en läsbar rapport för uppföljning. **Säkerhetskopia** sparar däremot en JSON-fil som senare kan läsas tillbaka med **Återställ**. Spara regelbundet JSON-filen på en säker plats eftersom webbläsarens lokala data kan rensas.
+**Excel-rapport** skapar en läsbar rapport för uppföljning. **Säkerhetskopia** sparar däremot en JSON-fil som senare kan läsas tillbaka med **Slå ihop backup**. Importen sammanfogar stabila post-ID:n och behåller den senast ändrade versionen i stället för att ersätta hela historiken.
 
 Appens gränssnitt cachas lokalt efter första besöket och kan därefter öppnas utan internetanslutning.
 
 ## Säker molnsynk och PS Medicinkoll
 
-Projektet innehåller nu en Supabase-backend som kan driftsättas separat. PWA:n sparar fortfarande först i `localStorage`, köar ändringar och försöker synka igen vid nätanslutning, appstart och när appen blir aktiv. Stabilt lokalt ID används som `client_record_id`, vilket gör upsert idempotent.
+Projektet innehåller nu en Supabase-backend som kan driftsättas separat. PWA:n sparar fortfarande först i `localStorage`, köar ändringar och synkroniserar i båda riktningarna vid nätanslutning, appstart och när appen blir aktiv. Stabilt lokalt ID används som `client_record_id`, den senast ändrade versionen vinner vid konflikt och tombstones hindrar offline-enheter från att återuppliva raderade poster.
 
 GPT-ytan definieras i `openapi.yaml` och innehåller endast tre GET-operationer:
 
@@ -66,6 +66,6 @@ Bryggan behövs eftersom GPT Actions OAuth-flöde inte skickar PKCE-parametrarna
 
 ### Kontroller
 
-Kör `node tests/static_checks.mjs`. Testet säkerställer bland annat att GPT Action-schemat bara exponerar GET och att uppenbara serverhemligheter inte finns i klientfilerna. Databastestet kontrollerar uttryckligen att användare A inte kan läsa användare B:s doser eller observationer. `tests/bridge_qa.mjs` kör ett fullständigt syntetiskt OAuth-flöde mot det länkade testprojektet och kräver att bridge-hemligheten tillförs enbart som processmiljö.
+Kör `node tests/static_checks.mjs`, `node tests/timezone_checks.mjs` och `node tests/sync_merge_checks.mjs`. Databastestet kontrollerar uttryckligen att användare A inte kan läsa användare B:s doser eller observationer. `tests/remote_qa.mjs` verifierar även idempotens och att en gammal enhet inte kan återuppliva en raderad post. `tests/bridge_qa.mjs` kör ett fullständigt syntetiskt OAuth-flöde mot det länkade testprojektet och kräver att bridge-hemligheten tillförs enbart som processmiljö.
 
 Före produktion återstår dessutom verifiering av två riktiga testkonton, offline/online-scenariot med exakt tre poster, OAuth-återkallning, konto- och backuppruning samt ett datumintervall över CET/CEST-skifte.
