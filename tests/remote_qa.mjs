@@ -59,6 +59,7 @@ const dosesA = [
   note: null,
   source_created_at: "2026-08-24T06:00:00Z",
   source_updated_at: "2026-08-24T12:00:00Z",
+  display_order: 1781385200094,
 }));
 const dosesB = [{
   client_record_id: "qa-b-0900", scheduled_at: "2026-08-24T09:00:00+02:00",
