@@ -42,6 +42,41 @@ assert.match(serviceWorker, /addEventListener\("push"/);
 assert.match(serviceWorker, /addEventListener\("notificationclick"/);
 assert.match(serviceWorker, /Planerad medicinering om 5 minuter/);
 assert.doesNotMatch(serviceWorker, /medication_name|dose_logs/, "notification content contains no medication details");
+assert.doesNotMatch(serviceWorker, /icon:\s*["'].*\.svg|badge:\s*["'].*\.svg/, "iOS notifications must not use unsupported SVG artwork");
+
+const workerHandlers = {};
+const shownNotifications = [];
+const workerSelf = {
+  addEventListener(type, handler) { workerHandlers[type] = handler; },
+  skipWaiting() {},
+  registration: {
+    async showNotification(title, options) { shownNotifications.push({ title, options }); },
+  },
+  clients: { claim() {}, matchAll: async () => [], openWindow: async () => {} },
+  location: { origin: "https://example.test" },
+};
+vm.runInNewContext(serviceWorker, {
+  self: workerSelf,
+  importScripts() {},
+  caches: { open: async () => ({ addAll: async () => {}, put: async () => {} }), keys: async () => [], match: async () => null, delete: async () => true },
+  fetch: async () => ({ ok: true, clone() { return this; } }),
+  URL,
+});
+let pushWork;
+workerHandlers.push({
+  data: { json: () => ({ title: "Medicinkoll", body: "Planerad medicinering om 5 minuter.", url: "/medicinlogg/" }) },
+  waitUntil(work) { pushWork = work; },
+});
+await pushWork;
+assert.deepEqual(JSON.parse(JSON.stringify(shownNotifications)), [{
+  title: "Medicinkoll",
+  options: {
+    body: "Planerad medicinering om 5 minuter.",
+    tag: "medicinlogg-planned-dose",
+    renotify: false,
+    data: { url: "/medicinlogg/" },
+  },
+}], "a received Web Push must display a notification");
 const cloudSync = readFileSync("cloud-sync.js", "utf8");
 assert.match(cloudSync, /disableCurrentSubscription\(false\)/, "logout disables only the current device subscription");
 console.log("Web Push frontend checks passed");
