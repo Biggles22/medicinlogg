@@ -1032,7 +1032,7 @@
           <div>
             <h1>Medicinlogg</h1>
             <p>Standarddag + justeringar</p>
-            <span class="app-version">Version <span data-app-version>29</span></span>
+            <span class="app-version">Version <span data-app-version>30</span></span>
           </div>
         </div>
 
@@ -1126,6 +1126,9 @@
                     <path d="M4 19V5" /><path d="M8 17V9" /><path d="M12 17V7" /><path d="M16 17v-5" /><path d="M20 17V9" />
                   </svg>
                   Summering
+                </button>
+                <button class="btn danger" id="clearSelectedDayBtn" type="button">
+                  Rensa vald dag
                 </button>
               </div>
             </div>
@@ -1291,10 +1294,10 @@
     <datalist id="doseOptions"></datalist>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="./version.js?v=29"></script>
-    <script src="./config.js?v=29"></script>
-    <script src="./cloud-sync.js?v=29"></script>
-    <script src="./push-notifications.js?v=29"></script>
+    <script src="./version.js?v=30"></script>
+    <script src="./config.js?v=30"></script>
+    <script src="./cloud-sync.js?v=30"></script>
+    <script src="./push-notifications.js?v=30"></script>
     <script>
       const storageKey = "medicinlogg.v2";
       const oldStorageKey = "medicinlogg.v1";
@@ -1354,6 +1357,7 @@
       document.querySelector("#createDayBtn").addEventListener("click", createDayFromTemplate);
       document.querySelector("#addDoseBtn").addEventListener("click", addDoseToDay);
       document.querySelector("#showSummaryBtn").addEventListener("click", () => setView("summary"));
+      document.querySelector("#clearSelectedDayBtn").addEventListener("click", clearSelectedDay);
       document.querySelector("#backToDayBtn").addEventListener("click", () => setView("today"));
       document.querySelector("#saveSummaryPngBtn").addEventListener("click", saveSummaryPng);
       document.querySelector("#addObservationBtn").addEventListener("click", addObservation);
@@ -2203,6 +2207,25 @@
         toast("Mallen återställd");
       }
 
+      function clearSelectedDay() {
+        const date = els.selectedDate.value;
+        const doses = state.entries.filter((entry) => entry.date === date);
+        const observations = state.observations.filter((item) => item.date === date);
+        if (!doses.length && !observations.length) {
+          toast("Det finns ingen historik att rensa för vald dag");
+          return;
+        }
+        const details = `${doses.length} medicinrad${doses.length === 1 ? "" : "er"} och ${observations.length} observation${observations.length === 1 ? "" : "er"}`;
+        if (!confirm(`Rensa ${details} för ${date}? Detta går inte att ångra.`)) return;
+        doses.forEach((entry) => window.medicinkollCloud?.queueDelete("dose", entry.id));
+        observations.forEach((item) => window.medicinkollCloud?.queueDelete("observation", item.id));
+        state.entries = state.entries.filter((entry) => entry.date !== date);
+        state.observations = state.observations.filter((item) => item.date !== date);
+        saveState();
+        render();
+        toast(`Historiken för ${date} har rensats`);
+      }
+
       function resetAllData() {
         const hasData = state.entries.length || state.observations.length;
         if (!hasData) {
@@ -2906,7 +2929,7 @@
           window.location.reload();
         });
         navigator.serviceWorker
-          .register("./sw.js?v=29", { updateViaCache: "none" })
+          .register("./sw.js?v=30", { updateViaCache: "none" })
           .then((registration) => registration.update())
           .catch(() => {});
       }
