@@ -43,7 +43,7 @@ Deno.serve(async (request) => {
           keys: { p256dh: delivery.p256dh, auth: delivery.auth },
         }, JSON.stringify({
           title: "Medicinkoll",
-          body: "Planerad medicinering om 5 minuter.",
+          body: "Planerad medicinering om 10 minuter.",
           url: "/medicinlogg/",
         }), { TTL: 300, urgency: "high" });
         const completion = await admin.rpc("complete_notification_delivery", {

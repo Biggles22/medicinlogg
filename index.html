@@ -1032,7 +1032,7 @@
           <div>
             <h1>Medicinlogg</h1>
             <p>Standarddag + justeringar</p>
-            <span class="app-version">Version <span data-app-version>28</span></span>
+            <span class="app-version">Version <span data-app-version>29</span></span>
           </div>
         </div>
 
@@ -1258,7 +1258,7 @@
               <span class="pill" id="pushStatus">Kontrollerar…</span>
             </div>
             <div class="panel-body">
-              <p><strong>Påminnelse 5 minuter före planerad dos.</strong> Påminnelsen följer alltid den planerade tiden och flyttas aldrig utifrån ett faktiskt intag.</p>
+              <p><strong>Påminnelse 10 minuter före planerad dos.</strong> Påminnelsen följer alltid den planerade tiden och flyttas aldrig utifrån ett faktiskt intag.</p>
               <p id="nextReminderDose">Kontrollerar nästa planerade dos…</p>
               <div class="toolbar">
                 <button class="btn primary" id="enablePushBtn" type="button">Aktivera påminnelser</button>
@@ -1291,10 +1291,10 @@
     <datalist id="doseOptions"></datalist>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="./version.js?v=28"></script>
-    <script src="./config.js?v=28"></script>
-    <script src="./cloud-sync.js?v=28"></script>
-    <script src="./push-notifications.js?v=28"></script>
+    <script src="./version.js?v=29"></script>
+    <script src="./config.js?v=29"></script>
+    <script src="./cloud-sync.js?v=29"></script>
+    <script src="./push-notifications.js?v=29"></script>
     <script>
       const storageKey = "medicinlogg.v2";
       const oldStorageKey = "medicinlogg.v1";
@@ -2906,7 +2906,7 @@
           window.location.reload();
         });
         navigator.serviceWorker
-          .register("./sw.js?v=28", { updateViaCache: "none" })
+          .register("./sw.js?v=29", { updateViaCache: "none" })
           .then((registration) => registration.update())
           .catch(() => {});
       }

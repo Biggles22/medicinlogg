@@ -40,7 +40,7 @@ await assert.rejects(window.medicinkollPush.enable(), /blockerade/, "permission 
 const serviceWorker = readFileSync("sw.js", "utf8");
 assert.match(serviceWorker, /addEventListener\("push"/);
 assert.match(serviceWorker, /addEventListener\("notificationclick"/);
-assert.match(serviceWorker, /Planerad medicinering om 5 minuter/);
+assert.match(serviceWorker, /Planerad medicinering om 10 minuter/);
 assert.doesNotMatch(serviceWorker, /medication_name|dose_logs/, "notification content contains no medication details");
 assert.doesNotMatch(serviceWorker, /icon:\s*["'].*\.svg|badge:\s*["'].*\.svg/, "iOS notifications must not use unsupported SVG artwork");
 
@@ -64,14 +64,14 @@ vm.runInNewContext(serviceWorker, {
 });
 let pushWork;
 workerHandlers.push({
-  data: { json: () => ({ title: "Medicinkoll", body: "Planerad medicinering om 5 minuter.", url: "/medicinlogg/" }) },
+  data: { json: () => ({ title: "Medicinkoll", body: "Planerad medicinering om 10 minuter.", url: "/medicinlogg/" }) },
   waitUntil(work) { pushWork = work; },
 });
 await pushWork;
 assert.deepEqual(JSON.parse(JSON.stringify(shownNotifications)), [{
   title: "Medicinkoll",
   options: {
-    body: "Planerad medicinering om 5 minuter.",
+    body: "Planerad medicinering om 10 minuter.",
     tag: "medicinlogg-planned-dose",
     renotify: false,
     data: { url: "/medicinlogg/" },

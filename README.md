@@ -33,7 +33,7 @@ Appens gränssnitt cachas lokalt efter första besöket och kan därefter öppna
 
 Påminnelser är avstängda som standard. En inloggad användare aktiverar dem under **Inställningar → Medicinpåminnelser**. Webbläsarens notistillstånd efterfrågas endast efter knapptryckningen. På iPhone och iPad krävs att PWA:n är installerad på hemskärmen och öppnas där.
 
-Servern utgår uteslutande från `dose_logs.scheduled_at`. För en planerad slot beräknas `reminder_at = scheduled_at - 5 minuter`. Faktisk intagstid flyttar aldrig nästa tid eller något schema. Alla medicinrader med samma användare och `scheduled_at` behandlas som en planerad slot, vilket förhindrar flera notiser för läkemedel som hör till samma tillfälle. Standardtexten innehåller varken läkemedelsnamn eller dos.
+Servern utgår uteslutande från `dose_logs.scheduled_at`. För en planerad slot beräknas `reminder_at = scheduled_at - 10 minuter`. Faktisk intagstid flyttar aldrig nästa tid eller något schema. Alla medicinrader med samma användare och `scheduled_at` behandlas som en planerad slot, vilket förhindrar flera notiser för läkemedel som hör till samma tillfälle. Standardtexten innehåller varken läkemedelsnamn eller dos.
 
 Arkitekturen består av:
 

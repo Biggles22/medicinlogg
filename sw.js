@@ -1,7 +1,7 @@
-importScripts("./version.js?v=28");
+importScripts("./version.js?v=29");
 
 const cacheName = `medicinlogg-v${globalThis.MEDICINKOLL_VERSION}`;
-const filesToCache = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./version.js?v=28", "./config.js?v=28", "./cloud-sync.js?v=28", "./push-notifications.js?v=28", "./privacy/", "./oauth/consent/", "./oauth/consent/consent.js?v=20"];
+const filesToCache = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./version.js?v=29", "./config.js?v=29", "./cloud-sync.js?v=29", "./push-notifications.js?v=29", "./privacy/", "./oauth/consent/", "./oauth/consent/consent.js?v=20"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(cacheName).then((cache) => cache.addAll(filesToCache)));
@@ -50,7 +50,7 @@ self.addEventListener("push", (event) => {
   let payload = {};
   try { payload = event.data?.json() || {}; } catch (_) { payload = {}; }
   const title = typeof payload.title === "string" ? payload.title : "Medicinkoll";
-  const body = typeof payload.body === "string" ? payload.body : "Planerad medicinering om 5 minuter.";
+  const body = typeof payload.body === "string" ? payload.body : "Planerad medicinering om 10 minuter.";
   event.waitUntil(self.registration.showNotification(title, {
     body,
     tag: "medicinlogg-planned-dose",

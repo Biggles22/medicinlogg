@@ -111,7 +111,7 @@
     const subscription = await currentSubscription();
     const preferences = await window.medicinkollCloud.apiRequest("/rest/v1/notification_preferences?select=enabled,minutes_before&limit=1", { method: "GET" }).catch(() => []);
     const active = Boolean(subscription && preferences[0]?.enabled && Notification.permission === "granted");
-    status.textContent = message || (active ? "Aktiverad · 5 minuter före planerad dos" : Notification.permission === "denied" ? "Avstängd · notiser är blockerade i enheten" : "Avstängd");
+    status.textContent = message || (active ? "Aktiverad · 10 minuter före planerad dos" : Notification.permission === "denied" ? "Avstängd · notiser är blockerade i enheten" : "Avstängd");
     enableButton.disabled = active;
     disableButton.disabled = !subscription && !preferences[0]?.enabled;
   }
