@@ -17,7 +17,9 @@ assert.match(clientFiles, /pattern="\[0-9\]\{6,8\}"/, "email OTP input must acce
 assert.match(clientFiles, /id="clearSelectedDayBtn"/, "the selected day must have an explicit cleanup action");
 assert.match(clientFiles, /queueDelete\("dose"/);
 assert.match(clientFiles, /queueDelete\("observation"/);
-assert.match(readFileSync("version.js", "utf8"), /MEDICINKOLL_VERSION = "30"/);
+assert.match(clientFiles, /medicine: \["Madopark Quick", "Madopark Depot"\]/);
+assert.match(clientFiles, /time: "22:30", medicine: "Madopark Depot", dose: "100 mg"/);
+assert.match(readFileSync("version.js", "utf8"), /MEDICINKOLL_VERSION = "31"/);
 assert.doesNotMatch(clientFiles, /service_role\s*[:=]\s*["'][^"']+/i);
 assert.doesNotMatch(clientFiles, /database_password\s*[:=]\s*["'][^"']+/i);
 assert.doesNotMatch(clientFiles, /VAPID_PRIVATE_KEY|REMINDER_CRON_SECRET|GPT_OAUTH_CLIENT_SECRET/);

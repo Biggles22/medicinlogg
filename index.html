@@ -1032,7 +1032,7 @@
           <div>
             <h1>Medicinlogg</h1>
             <p>Standarddag + justeringar</p>
-            <span class="app-version">Version <span data-app-version>30</span></span>
+            <span class="app-version">Version <span data-app-version>31</span></span>
           </div>
         </div>
 
@@ -1294,16 +1294,16 @@
     <datalist id="doseOptions"></datalist>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="./version.js?v=30"></script>
-    <script src="./config.js?v=30"></script>
-    <script src="./cloud-sync.js?v=30"></script>
-    <script src="./push-notifications.js?v=30"></script>
+    <script src="./version.js?v=31"></script>
+    <script src="./config.js?v=31"></script>
+    <script src="./cloud-sync.js?v=31"></script>
+    <script src="./push-notifications.js?v=31"></script>
     <script>
       const storageKey = "medicinlogg.v2";
       const oldStorageKey = "medicinlogg.v1";
       const doseIntervalMinutes = 180;
       const builtInOptions = {
-        medicine: ["Madopark Quick"],
+        medicine: ["Madopark Quick", "Madopark Depot"],
         dose: ["50 mg", "100 mg"],
       };
 
@@ -1320,6 +1320,7 @@
         { time: "16:00", medicine: "Entacapone", dose: "200 mg", note: "" },
         { time: "19:00", medicine: "Madopark", dose: "200 mg", note: "" },
         { time: "19:00", medicine: "Entacapone", dose: "200 mg", note: "" },
+        { time: "22:30", medicine: "Madopark Depot", dose: "100 mg", note: "" },
       ];
 
       const state = loadState();
@@ -1379,16 +1380,28 @@
         try {
           const parsed = JSON.parse(localStorage.getItem(storageKey));
           if (parsed && Array.isArray(parsed.template) && Array.isArray(parsed.entries)) {
-            const template = parsed.template.map((item) =>
+            let template = parsed.template.map((item) =>
               item.medicine?.trim().toLowerCase() === "madopark" && item.dose?.trim().toLowerCase() === "150 mg"
                 ? { ...item, dose: "200 mg" }
                 : item,
             );
+            if ((parsed.templateVersion || 1) < 2 && !template.some((item) =>
+              item.time === "22:30" && item.medicine === "Madopark Depot" && item.dose === "100 mg"
+            )) {
+              template = [...template, {
+                id: crypto.randomUUID(),
+                order: Math.max(-1, ...template.map((item) => Number(item.order) || 0)) + 1,
+                time: "22:30",
+                medicine: "Madopark Depot",
+                dose: "100 mg",
+                note: "",
+              }];
+            }
             const entries = parsed.entries.map((entry) => ({
               ...entry,
               ...(entry.status === "taken" && !entry.takenTime ? { takenTime: entry.time } : {}),
             }));
-            return { ...parsed, template, entries, observations: Array.isArray(parsed.observations) ? parsed.observations : [] };
+            return { ...parsed, templateVersion: 2, template, entries, observations: Array.isArray(parsed.observations) ? parsed.observations : [] };
           }
         } catch (error) {}
 
@@ -1396,6 +1409,7 @@
           const old = JSON.parse(localStorage.getItem(oldStorageKey));
           if (old && Array.isArray(old.entries)) {
             return {
+              templateVersion: 2,
               template: withIds(defaultTemplate),
               observations: [],
               entries: old.entries.map((entry) => ({
@@ -1412,7 +1426,7 @@
           }
         } catch (error) {}
 
-        return { template: withIds(defaultTemplate), entries: [], observations: [] };
+        return { templateVersion: 2, template: withIds(defaultTemplate), entries: [], observations: [] };
       }
 
       function withIds(items) {
@@ -2929,7 +2943,7 @@
           window.location.reload();
         });
         navigator.serviceWorker
-          .register("./sw.js?v=30", { updateViaCache: "none" })
+          .register("./sw.js?v=31", { updateViaCache: "none" })
           .then((registration) => registration.update())
           .catch(() => {});
       }
