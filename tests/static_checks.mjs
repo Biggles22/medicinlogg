@@ -18,8 +18,10 @@ assert.match(clientFiles, /id="clearSelectedDayBtn"/, "the selected day must hav
 assert.match(clientFiles, /queueDelete\("dose"/);
 assert.match(clientFiles, /queueDelete\("observation"/);
 assert.match(clientFiles, /medicine: \["Madopark Quick", "Madopark Depot"\]/);
-assert.match(clientFiles, /time: "22:30", medicine: "Madopark Depot", dose: "100 mg"/);
-assert.match(readFileSync("version.js", "utf8"), /MEDICINKOLL_VERSION = "31"/);
+assert.match(clientFiles, /time: "23:00", medicine: "Madopark Depot", dose: "100 mg", note: "", independent: true/);
+assert.match(clientFiles, /item\.status === "taken" && !isIndependentDose\(item\)/, "independent dose must be excluded from interval calculations");
+assert.match(clientFiles, /items\.filter\(\(item\) => !isIndependentDose\(item\)\)/, "independent dose must be excluded from cascading time changes");
+assert.match(readFileSync("version.js", "utf8"), /MEDICINKOLL_VERSION = "32"/);
 assert.doesNotMatch(clientFiles, /service_role\s*[:=]\s*["'][^"']+/i);
 assert.doesNotMatch(clientFiles, /database_password\s*[:=]\s*["'][^"']+/i);
 assert.doesNotMatch(clientFiles, /VAPID_PRIVATE_KEY|REMINDER_CRON_SECRET|GPT_OAUTH_CLIENT_SECRET/);

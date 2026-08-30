@@ -1294,10 +1294,10 @@
     <datalist id="doseOptions"></datalist>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="./version.js?v=31"></script>
-    <script src="./config.js?v=31"></script>
-    <script src="./cloud-sync.js?v=31"></script>
-    <script src="./push-notifications.js?v=31"></script>
+    <script src="./version.js?v=32"></script>
+    <script src="./config.js?v=32"></script>
+    <script src="./cloud-sync.js?v=32"></script>
+    <script src="./push-notifications.js?v=32"></script>
     <script>
       const storageKey = "medicinlogg.v2";
       const oldStorageKey = "medicinlogg.v1";
@@ -1320,7 +1320,7 @@
         { time: "16:00", medicine: "Entacapone", dose: "200 mg", note: "" },
         { time: "19:00", medicine: "Madopark", dose: "200 mg", note: "" },
         { time: "19:00", medicine: "Entacapone", dose: "200 mg", note: "" },
-        { time: "22:30", medicine: "Madopark Depot", dose: "100 mg", note: "" },
+        { time: "23:00", medicine: "Madopark Depot", dose: "100 mg", note: "", independent: true },
       ];
 
       const state = loadState();
@@ -1386,22 +1386,29 @@
                 : item,
             );
             if ((parsed.templateVersion || 1) < 2 && !template.some((item) =>
-              item.time === "22:30" && item.medicine === "Madopark Depot" && item.dose === "100 mg"
+              item.medicine === "Madopark Depot" && item.dose === "100 mg"
             )) {
               template = [...template, {
                 id: crypto.randomUUID(),
                 order: Math.max(-1, ...template.map((item) => Number(item.order) || 0)) + 1,
-                time: "22:30",
+                time: "23:00",
                 medicine: "Madopark Depot",
                 dose: "100 mg",
                 note: "",
+                independent: true,
               }];
+            }
+            if ((parsed.templateVersion || 1) < 3) {
+              template = template.map((item) => item.medicine === "Madopark Depot" && item.dose === "100 mg"
+                ? { ...item, time: "23:00", independent: true }
+                : item
+              );
             }
             const entries = parsed.entries.map((entry) => ({
               ...entry,
               ...(entry.status === "taken" && !entry.takenTime ? { takenTime: entry.time } : {}),
             }));
-            return { ...parsed, templateVersion: 2, template, entries, observations: Array.isArray(parsed.observations) ? parsed.observations : [] };
+            return { ...parsed, templateVersion: 3, template, entries, observations: Array.isArray(parsed.observations) ? parsed.observations : [] };
           }
         } catch (error) {}
 
@@ -1409,7 +1416,7 @@
           const old = JSON.parse(localStorage.getItem(oldStorageKey));
           if (old && Array.isArray(old.entries)) {
             return {
-              templateVersion: 2,
+              templateVersion: 3,
               template: withIds(defaultTemplate),
               observations: [],
               entries: old.entries.map((entry) => ({
@@ -1426,7 +1433,7 @@
           }
         } catch (error) {}
 
-        return { templateVersion: 2, template: withIds(defaultTemplate), entries: [], observations: [] };
+        return { templateVersion: 3, template: withIds(defaultTemplate), entries: [], observations: [] };
       }
 
       function withIds(items) {
@@ -1587,7 +1594,7 @@
 
       function buildDoseIntervalAnalysis(entries) {
         const targetMinutes = doseIntervalMinutes;
-        const takenEntries = entries.filter((item) => item.status === "taken");
+        const takenEntries = entries.filter((item) => item.status === "taken" && !isIndependentDose(item));
         const takenSlots = groupByTime(takenEntries, (item) => item.takenTime || item.time)
           .map(([time, items]) => ({
             time,
@@ -2148,6 +2155,7 @@
             dose: item.dose,
             note: item.note,
             order: item.order ?? 0,
+            independent: isIndependentDose(item),
             status: "planned",
             createdAt: new Date().toISOString(),
           });
@@ -2308,7 +2316,13 @@
         if (!Number.isFinite(startMinutes)) return false;
 
         const idSet = new Set(ids);
-        const groups = groupByTime(items);
+        const selectedItem = items.find((item) => idSet.has(item.id));
+        if (selectedItem && isIndependentDose(selectedItem)) {
+          items.filter((item) => idSet.has(item.id)).forEach((item) => setTime(item, startTime));
+          return true;
+        }
+
+        const groups = groupByTime(items.filter((item) => !isIndependentDose(item)));
         const startIndex = groups.findIndex(([, groupItems]) => groupItems.some((item) => idSet.has(item.id)));
         if (startIndex < 0) return false;
 
@@ -2317,6 +2331,12 @@
           groupItems.forEach((item) => setTime(item, time));
         });
         return true;
+      }
+
+      function isIndependentDose(item) {
+        return item?.independent === true || (
+          item?.time === "23:00" && item?.medicine?.trim().toLowerCase() === "madopark depot"
+        );
       }
 
       function updateObservation(id, key, value) {
@@ -2943,7 +2963,7 @@
           window.location.reload();
         });
         navigator.serviceWorker
-          .register("./sw.js?v=31", { updateViaCache: "none" })
+          .register("./sw.js?v=32", { updateViaCache: "none" })
           .then((registration) => registration.update())
           .catch(() => {});
       }
@@ -2974,6 +2994,7 @@
           medicine: item.medicine,
           dose: typeof item.dose === "string" ? item.dose : "",
           note: typeof item.note === "string" ? item.note : "",
+          independent: item.independent === true || (item.time === "23:00" && item.medicine.trim().toLowerCase() === "madopark depot"),
         };
       }
 
