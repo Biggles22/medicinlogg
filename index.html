@@ -1294,10 +1294,10 @@
     <datalist id="doseOptions"></datalist>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="./version.js?v=32"></script>
-    <script src="./config.js?v=32"></script>
-    <script src="./cloud-sync.js?v=32"></script>
-    <script src="./push-notifications.js?v=32"></script>
+    <script src="./version.js?v=33"></script>
+    <script src="./config.js?v=33"></script>
+    <script src="./cloud-sync.js?v=33"></script>
+    <script src="./push-notifications.js?v=33"></script>
     <script>
       const storageKey = "medicinlogg.v2";
       const oldStorageKey = "medicinlogg.v1";
@@ -2334,9 +2334,10 @@
       }
 
       function isIndependentDose(item) {
-        return item?.independent === true || (
-          item?.time === "23:00" && item?.medicine?.trim().toLowerCase() === "madopark depot"
-        );
+        const medicine = item?.medicine?.trim().toLowerCase();
+        return item?.independent === true
+          || medicine === "madopark quick"
+          || (item?.time === "23:00" && medicine === "madopark depot");
       }
 
       function updateObservation(id, key, value) {
@@ -2963,7 +2964,7 @@
           window.location.reload();
         });
         navigator.serviceWorker
-          .register("./sw.js?v=32", { updateViaCache: "none" })
+          .register("./sw.js?v=33", { updateViaCache: "none" })
           .then((registration) => registration.update())
           .catch(() => {});
       }
