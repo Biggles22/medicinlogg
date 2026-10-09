@@ -18,11 +18,13 @@ assert.match(clientFiles, /id="clearSelectedDayBtn"/, "the selected day must hav
 assert.match(clientFiles, /queueDelete\("dose"/);
 assert.match(clientFiles, /queueDelete\("observation"/);
 assert.match(clientFiles, /medicine: \["Madopark Quick", "Madopark Depot"\]/);
+assert.match(clientFiles, /time: "21:00", medicine: "Ongentys", dose: "50 mg", note: ""/);
 assert.match(clientFiles, /time: "23:00", medicine: "Madopark Depot", dose: "100 mg", note: "", independent: true/);
+assert.doesNotMatch(clientFiles, /medicine: "Entacapone"/, "Entacapone must not be part of the standard day");
 assert.match(clientFiles, /item\.status === "taken" && !isIndependentDose\(item\)/, "independent dose must be excluded from interval calculations");
 assert.match(clientFiles, /items\.filter\(\(item\) => !isIndependentDose\(item\)\)/, "independent dose must be excluded from cascading time changes");
 assert.match(clientFiles, /medicine === "madopark quick"/, "Madopark Quick must not affect the three-hour rule");
-assert.match(readFileSync("version.js", "utf8"), /MEDICINKOLL_VERSION = "33"/);
+assert.match(readFileSync("version.js", "utf8"), /MEDICINKOLL_VERSION = "34"/);
 assert.doesNotMatch(clientFiles, /service_role\s*[:=]\s*["'][^"']+/i);
 assert.doesNotMatch(clientFiles, /database_password\s*[:=]\s*["'][^"']+/i);
 assert.doesNotMatch(clientFiles, /VAPID_PRIVATE_KEY|REMINDER_CRON_SECRET|GPT_OAUTH_CLIENT_SECRET/);

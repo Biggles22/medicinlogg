@@ -1294,10 +1294,10 @@
     <datalist id="doseOptions"></datalist>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="./version.js?v=33"></script>
-    <script src="./config.js?v=33"></script>
-    <script src="./cloud-sync.js?v=33"></script>
-    <script src="./push-notifications.js?v=33"></script>
+    <script src="./version.js?v=34"></script>
+    <script src="./config.js?v=34"></script>
+    <script src="./cloud-sync.js?v=34"></script>
+    <script src="./push-notifications.js?v=34"></script>
     <script>
       const storageKey = "medicinlogg.v2";
       const oldStorageKey = "medicinlogg.v1";
@@ -1309,17 +1309,13 @@
 
       const defaultTemplate = [
         { time: "07:00", medicine: "Madopark", dose: "200 mg", note: "" },
-        { time: "07:00", medicine: "Entacapone", dose: "200 mg", note: "" },
         { time: "07:00", medicine: "Plåster", dose: "4 mg", note: "" },
         { time: "07:00", medicine: "Atorbir", dose: "10 mg", note: "" },
         { time: "10:00", medicine: "Madopark", dose: "200 mg", note: "" },
-        { time: "10:00", medicine: "Entacapone", dose: "200 mg", note: "" },
         { time: "13:00", medicine: "Madopark", dose: "200 mg", note: "" },
-        { time: "13:00", medicine: "Entacapone", dose: "200 mg", note: "" },
         { time: "16:00", medicine: "Madopark", dose: "200 mg", note: "" },
-        { time: "16:00", medicine: "Entacapone", dose: "200 mg", note: "" },
         { time: "19:00", medicine: "Madopark", dose: "200 mg", note: "" },
-        { time: "19:00", medicine: "Entacapone", dose: "200 mg", note: "" },
+        { time: "21:00", medicine: "Ongentys", dose: "50 mg", note: "" },
         { time: "23:00", medicine: "Madopark Depot", dose: "100 mg", note: "", independent: true },
       ];
 
@@ -1404,11 +1400,29 @@
                 : item
               );
             }
+            if ((parsed.templateVersion || 1) < 4) {
+              template = template.filter((item) => item.medicine?.trim().toLowerCase() !== "entacapone");
+              const hasOngentysDose = template.some((item) =>
+                item.time === "21:00" &&
+                item.medicine?.trim().toLowerCase() === "ongentys" &&
+                item.dose?.trim().toLowerCase() === "50 mg"
+              );
+              if (!hasOngentysDose) {
+                template = [...template, {
+                  id: crypto.randomUUID(),
+                  order: Math.max(-1, ...template.map((item) => Number(item.order) || 0)) + 1,
+                  time: "21:00",
+                  medicine: "Ongentys",
+                  dose: "50 mg",
+                  note: "",
+                }];
+              }
+            }
             const entries = parsed.entries.map((entry) => ({
               ...entry,
               ...(entry.status === "taken" && !entry.takenTime ? { takenTime: entry.time } : {}),
             }));
-            return { ...parsed, templateVersion: 3, template, entries, observations: Array.isArray(parsed.observations) ? parsed.observations : [] };
+            return { ...parsed, templateVersion: 4, template, entries, observations: Array.isArray(parsed.observations) ? parsed.observations : [] };
           }
         } catch (error) {}
 
@@ -1416,7 +1430,7 @@
           const old = JSON.parse(localStorage.getItem(oldStorageKey));
           if (old && Array.isArray(old.entries)) {
             return {
-              templateVersion: 3,
+              templateVersion: 4,
               template: withIds(defaultTemplate),
               observations: [],
               entries: old.entries.map((entry) => ({
@@ -1433,7 +1447,7 @@
           }
         } catch (error) {}
 
-        return { templateVersion: 3, template: withIds(defaultTemplate), entries: [], observations: [] };
+        return { templateVersion: 4, template: withIds(defaultTemplate), entries: [], observations: [] };
       }
 
       function withIds(items) {
@@ -2964,7 +2978,7 @@
           window.location.reload();
         });
         navigator.serviceWorker
-          .register("./sw.js?v=33", { updateViaCache: "none" })
+          .register("./sw.js?v=34", { updateViaCache: "none" })
           .then((registration) => registration.update())
           .catch(() => {});
       }
