@@ -1294,10 +1294,10 @@
     <datalist id="doseOptions"></datalist>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="./version.js?v=35"></script>
-    <script src="./config.js?v=35"></script>
-    <script src="./cloud-sync.js?v=35"></script>
-    <script src="./push-notifications.js?v=35"></script>
+    <script src="./version.js?v=36"></script>
+    <script src="./config.js?v=36"></script>
+    <script src="./cloud-sync.js?v=36"></script>
+    <script src="./push-notifications.js?v=36"></script>
     <script>
       const storageKey = "medicinlogg.v2";
       const oldStorageKey = "medicinlogg.v1";
@@ -1320,6 +1320,7 @@
       ];
 
       const state = loadState();
+      let didFocusNextDoseOnOpen = false;
       const els = {
         todayPercent: document.querySelector("#todayPercent"),
         takenToday: document.querySelector("#takenToday"),
@@ -1344,6 +1345,7 @@
       els.selectedDate.value = todayKey();
       saveState();
       render();
+      focusNextPlannedDoseOnOpen();
       registerServiceWorker();
 
       document.querySelectorAll(".tab").forEach((tab) => {
@@ -1529,6 +1531,7 @@
           const allTaken = items.every((item) => item.status === "taken");
           const slot = document.createElement("article");
           slot.className = "slot";
+          slot.dataset.time = time;
           slot.innerHTML = `
             <div class="slot-head">
               <div class="slot-main">
@@ -1588,6 +1591,35 @@
 
           els.scheduleList.append(slot);
         });
+      }
+
+      function focusNextPlannedDoseOnOpen() {
+        if (didFocusNextDoseOnOpen || !isAppleMobileDevice() || els.selectedDate.value !== todayKey()) return;
+
+        const planned = entriesForDate(els.selectedDate.value)
+          .filter((entry) => entry.status === "planned")
+          .sort((a, b) => a.time.localeCompare(b.time) || (a.order ?? 0) - (b.order ?? 0));
+        if (!planned.length) return;
+
+        const now = currentTime();
+        const next = planned.find((entry) => entry.time >= now) || planned[0];
+        const target = [...els.scheduleList.querySelectorAll(".slot")]
+          .find((slot) => slot.dataset.time === next.time);
+        if (!target) return;
+
+        didFocusNextDoseOnOpen = true;
+        target.tabIndex = -1;
+        window.setTimeout(() => {
+          requestAnimationFrame(() => {
+            target.focus({ preventScroll: true });
+            target.scrollIntoView({ behavior: "auto", block: "center" });
+          });
+        }, 200);
+      }
+
+      function isAppleMobileDevice() {
+        return /iPhone|iPad|iPod/.test(navigator.userAgent)
+          || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
       }
 
       function renderDoseIntervals(entries) {
@@ -2975,6 +3007,7 @@
         state.entries = event.detail.entries || [];
         state.observations = event.detail.observations || [];
         render();
+        focusNextPlannedDoseOnOpen();
       });
 
       function registerServiceWorker() {
@@ -2986,7 +3019,7 @@
           window.location.reload();
         });
         navigator.serviceWorker
-          .register("./sw.js?v=35", { updateViaCache: "none" })
+          .register("./sw.js?v=36", { updateViaCache: "none" })
           .then((registration) => registration.update())
           .catch(() => {});
       }

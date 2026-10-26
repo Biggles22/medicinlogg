@@ -25,7 +25,10 @@ assert.match(clientFiles, /item\.status === "taken" && !isIndependentDose\(item\
 assert.match(clientFiles, /items\.filter\(\(item\) => !isIndependentDose\(item\)\)/, "independent dose must be excluded from cascading time changes");
 assert.match(clientFiles, /medicine === "madopark quick"/, "Madopark Quick must not affect the three-hour rule");
 assert.match(clientFiles, /medicine === "ongentys"/, "Ongentys must not affect the three-hour rule");
-assert.match(readFileSync("version.js", "utf8"), /MEDICINKOLL_VERSION = "35"/);
+assert.match(clientFiles, /focusNextPlannedDoseOnOpen/);
+assert.match(clientFiles, /iPhone\|iPad\|iPod/);
+assert.match(clientFiles, /scrollIntoView\(\{ behavior: "auto", block: "center" \}\)/);
+assert.match(readFileSync("version.js", "utf8"), /MEDICINKOLL_VERSION = "36"/);
 assert.doesNotMatch(clientFiles, /service_role\s*[:=]\s*["'][^"']+/i);
 assert.doesNotMatch(clientFiles, /database_password\s*[:=]\s*["'][^"']+/i);
 assert.doesNotMatch(clientFiles, /VAPID_PRIVATE_KEY|REMINDER_CRON_SECRET|GPT_OAUTH_CLIENT_SECRET/);

@@ -1,4 +1,4 @@
-globalThis.MEDICINKOLL_VERSION = "35";
+globalThis.MEDICINKOLL_VERSION = "36";
 
 if (typeof document !== "undefined") {
   document.addEventListener("DOMContentLoaded", () => {
