@@ -32,7 +32,8 @@ assert.match(clientFiles, /const latestState = readLocalState\(\)/, "cloud merge
 assert.match(clientFiles, /if \(syncQueued\) sync\(\)/, "changes queued during sync must trigger another sync pass");
 assert.match(clientFiles, /adjustOngentysAroundEveningMadopark\(items, setTime\)/);
 assert.match(clientFiles, /Math\.abs\(ongentysMinutes - eveningMadopark\.minutes\) >= 60/);
-assert.match(readFileSync("version.js", "utf8"), /MEDICINKOLL_VERSION = "38"/);
+assert.match(clientFiles, /\[eveningMadopark\.minutes \+ 60, eveningMadopark\.minutes - 60\]/, "an Ongentys conflict must prefer the later option");
+assert.match(readFileSync("version.js", "utf8"), /MEDICINKOLL_VERSION = "39"/);
 assert.doesNotMatch(clientFiles, /service_role\s*[:=]\s*["'][^"']+/i);
 assert.doesNotMatch(clientFiles, /database_password\s*[:=]\s*["'][^"']+/i);
 assert.doesNotMatch(clientFiles, /VAPID_PRIVATE_KEY|REMINDER_CRON_SECRET|GPT_OAUTH_CLIENT_SECRET/);

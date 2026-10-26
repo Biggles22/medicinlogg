@@ -1294,7 +1294,7 @@
     <datalist id="doseOptions"></datalist>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="./version.js?v=38"></script>
+    <script src="./version.js?v=39"></script>
     <script src="./config.js?v=38"></script>
     <script src="./cloud-sync.js?v=38"></script>
     <script src="./push-notifications.js?v=38"></script>
@@ -2401,9 +2401,8 @@
             const ongentysMinutes = timeToMinutes(item.time);
             if (!Number.isFinite(ongentysMinutes) || Math.abs(ongentysMinutes - eveningMadopark.minutes) >= 60) return;
 
-            const candidates = [eveningMadopark.minutes - 60, eveningMadopark.minutes + 60]
-              .filter((minutes) => minutes >= 0 && minutes < 24 * 60)
-              .sort((a, b) => Math.abs(a - ongentysMinutes) - Math.abs(b - ongentysMinutes));
+            const candidates = [eveningMadopark.minutes + 60, eveningMadopark.minutes - 60]
+              .filter((minutes) => minutes >= 0 && minutes < 24 * 60);
             if (candidates.length) setTime(item, minutesToTime(candidates[0]));
           });
       }
