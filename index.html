@@ -1294,10 +1294,10 @@
     <datalist id="doseOptions"></datalist>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="./version.js?v=36"></script>
-    <script src="./config.js?v=36"></script>
-    <script src="./cloud-sync.js?v=36"></script>
-    <script src="./push-notifications.js?v=36"></script>
+    <script src="./version.js?v=37"></script>
+    <script src="./config.js?v=37"></script>
+    <script src="./cloud-sync.js?v=37"></script>
+    <script src="./push-notifications.js?v=37"></script>
     <script>
       const storageKey = "medicinlogg.v2";
       const oldStorageKey = "medicinlogg.v1";
@@ -3019,7 +3019,7 @@
           window.location.reload();
         });
         navigator.serviceWorker
-          .register("./sw.js?v=36", { updateViaCache: "none" })
+          .register("./sw.js?v=37", { updateViaCache: "none" })
           .then((registration) => registration.update())
           .catch(() => {});
       }

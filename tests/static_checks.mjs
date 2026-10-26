@@ -28,7 +28,9 @@ assert.match(clientFiles, /medicine === "ongentys"/, "Ongentys must not affect t
 assert.match(clientFiles, /focusNextPlannedDoseOnOpen/);
 assert.match(clientFiles, /iPhone\|iPad\|iPod/);
 assert.match(clientFiles, /scrollIntoView\(\{ behavior: "auto", block: "center" \}\)/);
-assert.match(readFileSync("version.js", "utf8"), /MEDICINKOLL_VERSION = "36"/);
+assert.match(clientFiles, /const latestState = readLocalState\(\)/, "cloud merge must preserve changes made during an active sync");
+assert.match(clientFiles, /if \(syncQueued\) sync\(\)/, "changes queued during sync must trigger another sync pass");
+assert.match(readFileSync("version.js", "utf8"), /MEDICINKOLL_VERSION = "37"/);
 assert.doesNotMatch(clientFiles, /service_role\s*[:=]\s*["'][^"']+/i);
 assert.doesNotMatch(clientFiles, /database_password\s*[:=]\s*["'][^"']+/i);
 assert.doesNotMatch(clientFiles, /VAPID_PRIVATE_KEY|REMINDER_CRON_SECRET|GPT_OAUTH_CLIENT_SECRET/);

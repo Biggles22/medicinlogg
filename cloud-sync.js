@@ -8,6 +8,7 @@
   const configured = /^https:\/\/[^/]+\.supabase\.co$/.test(config.supabaseUrl || "") && Boolean(config.supabaseAnonKey);
   let session = null;
   let syncing = false;
+  let syncQueued = false;
   let retryTimer = null;
   let refreshPromise = null;
   let loginCodeRequested = false;
@@ -199,8 +200,13 @@
   }
 
   async function sync() {
-    if (!configured || !session || syncing || !navigator.onLine) return;
+    if (!configured || !session || !navigator.onLine) return;
+    if (syncing) {
+      syncQueued = true;
+      return;
+    }
     syncing = true;
+    syncQueued = false;
     renderStatus("Synkar…");
     try {
       const state = readLocalState();
@@ -231,11 +237,12 @@
       ]);
       const deletedDoseIds = new Set(remoteDeletions.filter((row) => row.record_type === "dose").map((row) => row.client_record_id));
       const deletedObservationIds = new Set(remoteDeletions.filter((row) => row.record_type === "observation").map((row) => row.client_record_id));
-      state.entries = mergeById(state.entries || [], remoteDoses.map(remoteDose), deletedDoseIds);
-      state.observations = mergeById(state.observations || [], remoteObservations.map(remoteObservation), deletedObservationIds);
-      localStorage.setItem(stateKey, JSON.stringify(state));
-      fingerprints = stateFingerprints(state);
-      window.dispatchEvent(new CustomEvent("medicinkoll:state-synced", { detail: state }));
+      const latestState = readLocalState();
+      latestState.entries = mergeById(latestState.entries || [], remoteDoses.map(remoteDose), deletedDoseIds);
+      latestState.observations = mergeById(latestState.observations || [], remoteObservations.map(remoteObservation), deletedObservationIds);
+      localStorage.setItem(stateKey, JSON.stringify(latestState));
+      fingerprints = stateFingerprints(latestState);
+      window.dispatchEvent(new CustomEvent("medicinkoll:state-synced", { detail: latestState }));
       syncState.migrated = true;
       syncState.pending = false;
       syncState.deletedDoses = [];
@@ -252,6 +259,7 @@
     } finally {
       syncing = false;
       renderStatus();
+      if (syncQueued) sync();
     }
   }
 
