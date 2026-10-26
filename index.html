@@ -1294,10 +1294,10 @@
     <datalist id="doseOptions"></datalist>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="./version.js?v=34"></script>
-    <script src="./config.js?v=34"></script>
-    <script src="./cloud-sync.js?v=34"></script>
-    <script src="./push-notifications.js?v=34"></script>
+    <script src="./version.js?v=35"></script>
+    <script src="./config.js?v=35"></script>
+    <script src="./cloud-sync.js?v=35"></script>
+    <script src="./push-notifications.js?v=35"></script>
     <script>
       const storageKey = "medicinlogg.v2";
       const oldStorageKey = "medicinlogg.v1";
@@ -1315,7 +1315,7 @@
         { time: "13:00", medicine: "Madopark", dose: "200 mg", note: "" },
         { time: "16:00", medicine: "Madopark", dose: "200 mg", note: "" },
         { time: "19:00", medicine: "Madopark", dose: "200 mg", note: "" },
-        { time: "21:00", medicine: "Ongentys", dose: "50 mg", note: "" },
+        { time: "21:00", medicine: "Ongentys", dose: "50 mg", note: "", independent: true },
         { time: "23:00", medicine: "Madopark Depot", dose: "100 mg", note: "", independent: true },
       ];
 
@@ -1418,11 +1418,18 @@
                 }];
               }
             }
+            if ((parsed.templateVersion || 1) < 5) {
+              template = template.map((item) =>
+                item.medicine?.trim().toLowerCase() === "ongentys"
+                  ? { ...item, independent: true }
+                  : item
+              );
+            }
             const entries = parsed.entries.map((entry) => ({
               ...entry,
               ...(entry.status === "taken" && !entry.takenTime ? { takenTime: entry.time } : {}),
             }));
-            return { ...parsed, templateVersion: 4, template, entries, observations: Array.isArray(parsed.observations) ? parsed.observations : [] };
+            return { ...parsed, templateVersion: 5, template, entries, observations: Array.isArray(parsed.observations) ? parsed.observations : [] };
           }
         } catch (error) {}
 
@@ -1430,7 +1437,7 @@
           const old = JSON.parse(localStorage.getItem(oldStorageKey));
           if (old && Array.isArray(old.entries)) {
             return {
-              templateVersion: 4,
+              templateVersion: 5,
               template: withIds(defaultTemplate),
               observations: [],
               entries: old.entries.map((entry) => ({
@@ -1447,7 +1454,7 @@
           }
         } catch (error) {}
 
-        return { templateVersion: 4, template: withIds(defaultTemplate), entries: [], observations: [] };
+        return { templateVersion: 5, template: withIds(defaultTemplate), entries: [], observations: [] };
       }
 
       function withIds(items) {
@@ -2350,6 +2357,7 @@
       function isIndependentDose(item) {
         const medicine = item?.medicine?.trim().toLowerCase();
         return item?.independent === true
+          || medicine === "ongentys"
           || medicine === "madopark quick"
           || (item?.time === "23:00" && medicine === "madopark depot");
       }
@@ -2978,7 +2986,7 @@
           window.location.reload();
         });
         navigator.serviceWorker
-          .register("./sw.js?v=34", { updateViaCache: "none" })
+          .register("./sw.js?v=35", { updateViaCache: "none" })
           .then((registration) => registration.update())
           .catch(() => {});
       }
@@ -3009,7 +3017,9 @@
           medicine: item.medicine,
           dose: typeof item.dose === "string" ? item.dose : "",
           note: typeof item.note === "string" ? item.note : "",
-          independent: item.independent === true || (item.time === "23:00" && item.medicine.trim().toLowerCase() === "madopark depot"),
+          independent: item.independent === true
+            || item.medicine.trim().toLowerCase() === "ongentys"
+            || (item.time === "23:00" && item.medicine.trim().toLowerCase() === "madopark depot"),
         };
       }
 
