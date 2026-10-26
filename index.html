@@ -1294,10 +1294,10 @@
     <datalist id="doseOptions"></datalist>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="./version.js?v=37"></script>
-    <script src="./config.js?v=37"></script>
-    <script src="./cloud-sync.js?v=37"></script>
-    <script src="./push-notifications.js?v=37"></script>
+    <script src="./version.js?v=38"></script>
+    <script src="./config.js?v=38"></script>
+    <script src="./cloud-sync.js?v=38"></script>
+    <script src="./push-notifications.js?v=38"></script>
     <script>
       const storageKey = "medicinlogg.v2";
       const oldStorageKey = "medicinlogg.v1";
@@ -2383,7 +2383,29 @@
           const time = minutesToTime(startMinutes + index * doseIntervalMinutes);
           groupItems.forEach((item) => setTime(item, time));
         });
+        adjustOngentysAroundEveningMadopark(items, setTime);
         return true;
+      }
+
+      function adjustOngentysAroundEveningMadopark(items, setTime) {
+        const eveningMadopark = items
+          .filter((item) => item.medicine?.trim().toLowerCase() === "madopark")
+          .map((item) => ({ item, minutes: timeToMinutes(item.time) }))
+          .filter(({ minutes }) => Number.isFinite(minutes))
+          .sort((a, b) => b.minutes - a.minutes)[0];
+        if (!eveningMadopark) return;
+
+        items
+          .filter((item) => item.medicine?.trim().toLowerCase() === "ongentys")
+          .forEach((item) => {
+            const ongentysMinutes = timeToMinutes(item.time);
+            if (!Number.isFinite(ongentysMinutes) || Math.abs(ongentysMinutes - eveningMadopark.minutes) >= 60) return;
+
+            const candidates = [eveningMadopark.minutes - 60, eveningMadopark.minutes + 60]
+              .filter((minutes) => minutes >= 0 && minutes < 24 * 60)
+              .sort((a, b) => Math.abs(a - ongentysMinutes) - Math.abs(b - ongentysMinutes));
+            if (candidates.length) setTime(item, minutesToTime(candidates[0]));
+          });
       }
 
       function isIndependentDose(item) {
@@ -3019,7 +3041,7 @@
           window.location.reload();
         });
         navigator.serviceWorker
-          .register("./sw.js?v=37", { updateViaCache: "none" })
+          .register("./sw.js?v=38", { updateViaCache: "none" })
           .then((registration) => registration.update())
           .catch(() => {});
       }
